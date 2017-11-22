@@ -13,6 +13,17 @@ const checkMsg = require('./checkMsg');
 const getMsg = require('./getMsg');
 let data = {};
 
+const tools = {
+  getMemberByUserName: UserName => {
+    if (!data.MemberList) return logger.warn(`没有获取到联系人`);
+    for (let i = 0; i < data.MemberList.length; i++) {
+      const member = data.MemberList[i];
+      if (member.UserName === UserName) {
+        return member
+      }
+    }
+  }
+}
 
 const action = {
   getUUID: () => {
@@ -50,12 +61,25 @@ const action = {
       const spinner = ora(`正在获取联系人...`).start();
       let obj = yield getContact(data);
       spinner.succeed('获取联系人完成');
-      logger.debug(`共${obj.MemberCount}位联系人,男性${obj.male}人，女性${obj.female}人`)
+      logger.debug(`共${obj.MemberCount}位联系人,男性${obj.male}人，女性${obj.female}人`);
+      data.MemberList = obj.MemberList;
     });
-
+  },
+  checkMsg: () => {
+    
   },
   getMsg: () => {
-
+    return co(function* () {
+      let res = yield getMsg(data);
+      data.SyncCheckKey = res.SyncCheckKey
+      data.SyncKey = res.SyncKey;
+      if (res.AddMsgList.length > 0) {
+        res.AddMsgList.forEach(msg => {
+          var user = tools.getMemberByUserName(msg.FromUserName);
+          //logger.info(`${user}`)
+        })
+      }
+    });
   },
   sendMsg: (content, reciver) => {
 
@@ -64,6 +88,8 @@ const action = {
 
   }
 }
+
+
 function start() {
   co(function* () {
     yield action.getUUID();
@@ -72,8 +98,7 @@ function start() {
     yield action.getRedictURL();
     yield action.initWebWX();
     yield action.getContact();
-    //yield getMsg(data);
-    //listeningStdin
+    yield action.getMsg();
     listeningStdin();
   });
 }

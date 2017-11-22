@@ -10,7 +10,8 @@ module.exports = param => {
       let obj = {
         MemberCount: res.MemberCount,
         male: 0,
-        female: 0
+        female: 0,
+        MemberList:res.MemberList
       }
       res.MemberList.forEach(member => {
         if (member.Sex == 2) obj.female += 1;
