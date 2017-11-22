@@ -13,6 +13,10 @@ log4js.configure({
     default: {
       appenders: ['file', 'log'],
       level: 'debug'
+    },
+    command: {
+      appenders: ['file', 'log'],
+      level: 'debug'
     }
   }
 });

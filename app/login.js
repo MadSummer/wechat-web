@@ -9,7 +9,7 @@ function login(uuid, tip) {
 }
 function loopGetURL(uuid,tip,onFullfilled) {
   rp.get(config.url.login(uuid, tip)).then(res => {
-    if (!res) return logger.error(`登录失败`);
+    if (!res) return logger.fatal(`登录失败`);
     let window = {}
     eval(res);
     if (window.code == 201) {
@@ -26,7 +26,7 @@ function loopGetURL(uuid,tip,onFullfilled) {
       });
     }
     if (window.code == 408) {
-      logger.debug(`登录失败`);
+      logger.fatal(`登录失败`);
       onFullfilled(false);
     }
   });
