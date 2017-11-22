@@ -3,7 +3,8 @@ const rp = require('./rp');
 const log = require('./log');
 module.exports = param => {
   return new Promise((onFullfilled, onRejected) => {
-    let p = rp.get(config.url.getContact(param));
+    let p = rp.get(config.url.checkMsg(param));
+    debugger
     p.then(res => {
       if (!res) onFullfilled(false);
       res = JSON.parse(res);

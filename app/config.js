@@ -13,7 +13,7 @@ module.exports = {
     },
     getQR: uuid => {
       return {
-        uri: 'https://login.weixin.qq.com/qrcode/' + uuid,
+        uri: 'https://login.weixin.qq.com/l/' + uuid,
       }
     },
     login: (uuid, tip) => {
@@ -42,14 +42,14 @@ module.exports = {
         },
         json: {
           BaseRequest: {
-            Uin: param.wxuin,
-            Sid: param.wxsid,
+            Uin: param.uin,
+            Sid: param.sid,
             Skey: param.skey
           },
           DeviceID: 'e441590048076577',
-          Sid: param.wxsid,
+          Sid: param.sid,
           Skey: param.skey,
-          Uin: param.wxuin,
+          Uin: param.uin,
         },
       };
     },
@@ -63,6 +63,46 @@ module.exports = {
           seq: 0,
           skey: param.skey,
         }
+      }
+    },
+    checkMsg: param => {
+      let synckey = [];
+      param.SyncCheckKey.List.forEach(list => {
+        let key = list.Key;
+        let val = list.Val;
+        synckey.push(key + '_' + val);
+      });
+      return {
+        uri: 'https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck',
+        qs: {
+          r: +new Date(),
+          _: +new Date(),
+          skey: param.skey,
+          sid: param.sid,
+          uin: param.uin,
+          synckey: synckey.join('|')
+        }
+      }
+    },
+    getMsg: param => {
+      return {
+        mthod:'POST',
+        uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync',
+        qs: {
+          sid: param.sid,
+          skey: param.skey,
+          lang: 'zh_CN',
+          pass_ticket: param.pass_ticket
+        },
+        json: {
+          BaseRequest: {
+            Uin: param.uin,
+            Sid: param.sid,
+            Skey: param.skey,
+            DeviceID: 'e441590048076577',
+          },
+          SyncKey: param.SyncKey
+        },
       }
     }
   }

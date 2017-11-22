@@ -13,8 +13,8 @@ module.exports = redirect_uri => {
           ret: info.ret[0],
           message: info.message[0],
           skey: info.skey[0],
-          wxsid: info.wxsid[0],
-          wxuin: info.wxuin[0],
+          sid: info.wxsid[0],
+          uin: info.wxuin[0],
           pass_ticket: info.pass_ticket[0],
           isgrarscale: info.isgrayscale[0]
         });
