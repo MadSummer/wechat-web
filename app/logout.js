@@ -3,10 +3,11 @@ const rp = require('./rp');
 const log = require('./log');
 module.exports = param => {
   return new Promise((onFullfilled, onRejected) => {
-    let p = rp(config.url.getMsg(param));
+    let p = rp(config.url.logout(param));
     p.then(res => {
-      if (!res) onFullfilled(false);
-      onFullfilled(res);
+      onFullfilled(true);
+    }, err => {
+      onFullfilled(true);
     });
   });
 }

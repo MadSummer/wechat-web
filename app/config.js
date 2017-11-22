@@ -38,7 +38,8 @@ module.exports = {
         uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=659125059&lang=zh_CN&pass_ticket=T23jnPGrJlqNIIVszEz1VG9h1d%252B9YbrnxXTleoqaEIA%253D',
         qs: {
           lang: 'zh_CN',
-          pass_ticket: param.pass_ticket
+          pass_ticket: param.pass_ticket,
+          r:~new Date()
         },
         json: {
           BaseRequest: {
@@ -46,7 +47,7 @@ module.exports = {
             Sid: param.sid,
             Skey: param.skey
           },
-          DeviceID: 'e441590048076577',
+          DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
           Sid: param.sid,
           Skey: param.skey,
           Uin: param.uin,
@@ -86,7 +87,7 @@ module.exports = {
     },
     getMsg: param => {
       return {
-        mthod:'POST',
+        method:'POST',
         uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync',
         qs: {
           sid: param.sid,
@@ -99,10 +100,29 @@ module.exports = {
             Uin: param.uin,
             Sid: param.sid,
             Skey: param.skey,
-            DeviceID: 'e441590048076577',
+            DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
           },
-          SyncKey: param.SyncKey
+          SyncKey: param.SyncKey,
+          rr:~new Date()
         },
+      }
+    },
+    sendMsg: param => {
+      
+    },
+    logout: param => {
+      return {
+        method:'POST',
+        uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxlogout',
+        qs: {
+          redirect: 1,
+          type: 0,
+          skey:param.skey
+        },
+        form: {
+          sid: param.sid,
+          uin:param.uin
+        }
       }
     }
   }

@@ -5,11 +5,13 @@ const showHelp = () => {
   logger.debug(chalk.green(`
   Options:
   --help,-?     显示帮助
+  --init,-i     重新登陆
   --contact,-t  获取联系人
   --get,-g      获取消息
   --send,-s     发送消息
   --reciver,-r  消息接受者
   --content,-c  消息内容
+  --logout,-o   退出账号
   --exit,-e     退出程序
   `));
 }
@@ -35,6 +37,14 @@ function parseStdin(stdin) {
   }
   if (action.contact || action.t) {
     require('./app').getContact();
+    return;
+  }
+  if (action.logout || action.o) {
+    require('./app').logout();
+    return;
+  }
+  if (action.init || action.i) {
+    require('./app').init();
     return;
   }
   return logger.warn(`输入命令有误，查看所有命令请输入 -? 或者 --help`);
