@@ -1,9 +1,7 @@
 const co = require('co');
 const logger = require('./log');
-const parseStdin = require('./parseStdin');
 const ora = require('ora');
-
-const sleep = require('./sleep');
+const interactive = require('./interactive');
 
 const getUUID = require('./getUUID');
 const showQR = require('./showQR');
@@ -13,9 +11,13 @@ const initWebWX = require('./initWebWX');
 const getContact = require('./getContact');
 const checkMsg = require('./checkMsg');
 const getMsg = require('./getMsg');
+const sendMsg = require('./sendMsg');
 const logout = require('./logout');
+const emitter = require('./emitter');
+
 let data = {
-  autoGetMsg: true
+  autoGetMsg: true,
+  showTips: true
 };
 
 const tools = {
@@ -24,7 +26,7 @@ const tools = {
     for (let i = 0; i < data.MemberList.length; i++) {
       const member = data.MemberList[i];
       if (member.UserName === UserName) {
-        return member
+        return member;
       }
     }
   }
@@ -59,7 +61,7 @@ const action = {
       if (!initData) return logger.fatal(`获取个人信息失败`);
       Object.assign(data, initData);
       logger.debug(`用户${initData.User.NickName}初始化成功`);
-    })
+    });
   },
   getContact: () => {
     return co(function* () {
@@ -72,7 +74,7 @@ const action = {
   },
   checkMsg: () => {
     return co(function* () {
-      logger.debug(`等待接受新消息...`);
+      if (data.showTips) logger.debug(`等待接受新消息...`);
       let res = yield checkMsg(data);
       if (!res) return logger.error(`获取新消息列表失败`);
       if (res.retcode == 1101) return logger.warn(`账号已退出，不再获取消息`);
@@ -91,26 +93,38 @@ const action = {
       data.SyncKey = res.SyncKey;
       if (res.AddMsgList.length > 0) {
         res.AddMsgList.forEach(msg => {
-          var user = tools.getMemberByUserName(msg.FromUserName);
+          let fromUser = tools.getMemberByUserName(msg.FromUserName);
+          let toUser = tools.getMemberByUserName(msg.ToUserName);
+          if (!fromUser) fromUser = { NickName: '<空>' }
+          if (!toUser) toUser = { NickName: '<空>' }
           if (!msg.Content) {
-            logger.debug(`${user.NickName}正在输入...`)
+
           } else {
-            logger.debug(`${user.NickName}：${msg.Content}`)
+            if (toUser.UserName === data.User.UserName) {
+              logger.debug(`${fromUser.NickName + (fromUser.RemarkName ? '(' + fromUser.RemarkName + ')' : '')}：${msg.Content}`);
+            }
+            if (fromUser.UserName === data.User.UserName) {
+              logger.debug(`我发送给${toUser.NickName + (toUser.RemarkName ? '(' + toUser.RemarkName + ')' : '')}:${msg.Content}`);
+            }
           }
         });
       }
     });
   },
-  sendMsg: (content, reciver) => {
-
+  sendMsg: msg => {
+    return co(function* () {
+      yield sendMsg(data, msg);
+    });
   },
   logout: () => {
+    logger.debug('--logout')
     return co(function* () {
       let flag = yield logout(data);
       if (flag) return logger.debug('已退出当前账号');
     });
   },
   init: () => {
+    logger.debug('init')
     return co(function* () {
       yield action.getUUID();
       action.showQR();
@@ -121,25 +135,32 @@ const action = {
       yield action.getMsg();
       action.checkMsg();
     });
+  },
+  closeTips: () => {
+    data.showTips = false;
   }
 }
-
-
-function start() {
-  co(function* () {
-    yield action.init();
-    listeningStdin();
-  });
+const addEventListener = () => {
+  for (const operation in action) {
+    if (action.hasOwnProperty(operation)) {
+      const handler = action[operation];
+      emitter.on(operation, handler);
+    }
+  }
 }
-
-function listeningStdin() {
-  logger.info('请输入要执行的操作,如需帮助请输入?');
+const listeningStdInput = function () {
   process.stdin.setEncoding('utf-8');
   process.stdin.on('data', val => {
-    parseStdin(val.trim());
+    interactive(val.trim());
   });
 }
-
+const start = function () {
+  co(function* () {
+    //yield action.init();
+    addEventListener();
+    logger.info('请输入要执行的操作,如需帮助请输入 ?');
+    listeningStdInput();
+  });
+}
 start();
-
 module.exports = action;

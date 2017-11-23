@@ -107,8 +107,31 @@ module.exports = {
         },
       }
     },
-    sendMsg: param => {
-      
+    sendMsg: (param,msg) => {
+      return {
+        method:'POST',
+        uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg',
+        qs: {
+          lang: 'zh_CN',
+          pass_ticket:param.pass_ticket
+        },
+        json: {
+          BaseRequest: {
+            Uin: param.uin,
+            Sid: param.sid,
+            Skey: param.skey,
+            DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
+          },
+          Msg: {
+            ClientMsgId: +new Date(),
+            Content: msg.content,
+            FromUserName: msg.FromUserName,
+            LocalID: +new Date(),
+            ToUserName:msg.ToUserName
+          },
+          Sence:0
+        }
+      }
     },
     logout: param => {
       return {
