@@ -1,19 +1,27 @@
+/*
+ * @Author: Liu Jing 
+ * @Date: 2017-11-24 15:19:31 
+ * @Last Modified by: Liu Jing
+ * @Last Modified time: 2017-11-24 16:15:43
+ */
 const co = require('co');
-const logger = require('./log');
 const ora = require('ora');
-const interactive = require('./interactive');
 
-const getUUID = require('./getUUID');
-const showQR = require('./showQR');
-const login = require('./login');
-const getRedictURL = require('./getRedictURL');
-const initWebWX = require('./initWebWX');
-const getContact = require('./getContact');
-const checkMsg = require('./checkMsg');
-const getMsg = require('./getMsg');
-const sendMsg = require('./sendMsg');
-const logout = require('./logout');
-const emitter = require('./emitter');
+const interactive = require('./lib/interactive');
+const emitter = require('./lib/emitter');
+const logger = require('./lib/log');
+const showQR = require('./lib/showQR');
+const config = require('./lib/config');
+
+const getUUID = require('./wechatapi/getUUID');
+const login = require('./wechatapi/login');
+const getRedictURL = require('./wechatapi/getRedictURL');
+const initWebWX = require('./wechatapi/initWebWX');
+const getContact = require('./wechatapi/getContact');
+const checkMsg = require('./wechatapi/checkMsg');
+const getMsg = require('./wechatapi/getMsg');
+const sendMsg = require('./wechatapi/sendMsg');
+const logout = require('./wechatapi/logout');
 
 let data = {
   autoGetMsg: true,
@@ -37,15 +45,19 @@ const action = {
     return co(function* () {
       data.uuid = yield getUUID;
       if (!data.uuid) return logger.fatal(`获取UUID失败`);
+    }).catch(err => {
+      logger.error(err);
     });
   },
   showQR: () => {
-    showQR(data.uuid);
+    showQR(config.url.getQR(data.uuid).uri);
   },
   login: () => {
     return co(function* () {
       data.redirect_uri = (yield login(data.uuid, 1)).redirect_uri;
       if (!data.redirect_uri) return logger.fatal(`登录失败！`);
+    }).catch(err => {
+      logger.error(err);
     })
   },
   getRedictURL: () => {
@@ -53,6 +65,8 @@ const action = {
       let info = yield getRedictURL(data.redirect_uri);
       if (!info) return logger.fatal(`获取跳转数据失败！`);
       Object.assign(data, info);
+    }).catch(err => {
+      logger.error(err);
     })
   },
   initWebWX: () => {
@@ -61,6 +75,8 @@ const action = {
       if (!initData) return logger.fatal(`获取个人信息失败`);
       Object.assign(data, initData);
       logger.debug(`用户${initData.User.NickName}初始化成功`);
+    }).catch(err => {
+      logger.error(err);
     });
   },
   getContact: () => {
@@ -70,6 +86,8 @@ const action = {
       spinner.succeed('获取联系人完成');
       logger.debug(`共${obj.MemberCount}位联系人,男性${obj.male}人，女性${obj.female}人`);
       data.MemberList = obj.MemberList;
+    }).catch(err => {
+      logger.error(err);
     });
   },
   checkMsg: () => {
@@ -84,6 +102,8 @@ const action = {
       if (data.autoGetMsg) {
         action.checkMsg();
       }
+    }).catch(err => {
+      logger.error(err);
     });
   },
   getMsg: () => {
@@ -109,11 +129,15 @@ const action = {
           }
         });
       }
+    }).catch(err => {
+      logger.error(err);
     });
   },
   sendMsg: msg => {
     return co(function* () {
       yield sendMsg(data, msg);
+    }).catch(err => {
+      logger.error(err);
     });
   },
   logout: () => {
@@ -121,6 +145,8 @@ const action = {
     return co(function* () {
       let flag = yield logout(data);
       if (flag) return logger.debug('已退出当前账号');
+    }).catch(err => {
+      logger.error(err);
     });
   },
   init: () => {
@@ -138,6 +164,9 @@ const action = {
   },
   closeTips: () => {
     data.showTips = false;
+  },
+  exit: () => {
+    process.exit(0);
   }
 }
 const addEventListener = () => {
@@ -156,7 +185,7 @@ const listeningStdInput = function () {
 }
 const start = function () {
   co(function* () {
-    //yield action.init();
+    yield action.init();
     addEventListener();
     logger.info('请输入要执行的操作,如需帮助请输入 ?');
     listeningStdInput();

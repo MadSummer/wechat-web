@@ -1,6 +1,6 @@
-const config = require('./config');
-const logger = require('./log');
-const rp = require('./rp');
+const config = require('../lib/config');
+const logger = require('../lib/log');
+const rp = require('../lib/rp');
 let timer;
 function login(uuid, tip) {
   return new Promise((onFullfilled, onRejected) => {

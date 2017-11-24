@@ -1,6 +1,6 @@
-const config = require('./config');
-const rp = require('./rp');
-const log = require('./log');
+const config = require('../lib/config');
+const rp = require('../lib/rp');
+const log = require('../lib/log');
 module.exports = (param,msg) => {
   return new Promise((onFullfilled, onRejected) => {
     let p = rp(config.url.sendMsg(param,msg));

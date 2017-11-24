@@ -5,15 +5,14 @@ const emitter = require('./emitter');
 const showHelp = () => {
   logger.debug(chalk.green(`
   Options:
-  --help,-?     显示帮助
-  --init,-i     重新登陆
-  --contact,-t  获取联系人
-  --get,-g      获取消息
-  --send,-s     发送消息
-  --reciver,-r  消息接受者
-  --content,-c  消息内容
-  --logout,-o   退出账号
-  --exit,-e     退出程序
+  help            显示帮助
+  init            重新登陆
+  contact         获取联系人
+  send,-s         发送消息
+    --reciver,-r  消息接受者
+    --content,-c  消息内容
+  logout          退出账号
+  exit            退出程序
   `));
 }
 function parseStdin(stdin) {

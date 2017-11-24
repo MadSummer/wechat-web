@@ -1,5 +1,5 @@
-const config = require('./config');
-const rp = require('./rp');
+const config = require('../lib/config');
+const rp = require('../lib/rp');
 module.exports =
   new Promise((onFullfilled, onRejected) => {
     rp
