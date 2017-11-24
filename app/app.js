@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-24 16:15:43
+ * @Last Modified time: 2017-11-24 18:02:40
  */
 const co = require('co');
 const ora = require('ora');
@@ -46,6 +46,7 @@ const action = {
       data.uuid = yield getUUID;
       if (!data.uuid) return logger.fatal(`获取UUID失败`);
     }).catch(err => {
+      logger.debug('getUUID err');
       logger.error(err);
     });
   },
@@ -57,6 +58,7 @@ const action = {
       data.redirect_uri = (yield login(data.uuid, 1)).redirect_uri;
       if (!data.redirect_uri) return logger.fatal(`登录失败！`);
     }).catch(err => {
+      logger.debug('login err');
       logger.error(err);
     })
   },
@@ -66,6 +68,7 @@ const action = {
       if (!info) return logger.fatal(`获取跳转数据失败！`);
       Object.assign(data, info);
     }).catch(err => {
+      logger.debug('getRedictURL err');
       logger.error(err);
     })
   },
@@ -76,6 +79,7 @@ const action = {
       Object.assign(data, initData);
       logger.debug(`用户${initData.User.NickName}初始化成功`);
     }).catch(err => {
+      logger.debug('initWebWX err')
       logger.error(err);
     });
   },
@@ -87,15 +91,15 @@ const action = {
       logger.debug(`共${obj.MemberCount}位联系人,男性${obj.male}人，女性${obj.female}人`);
       data.MemberList = obj.MemberList;
     }).catch(err => {
+      logger.debug('getContact err')
       logger.error(err);
     });
   },
   checkMsg: () => {
     return co(function* () {
-      if (data.showTips) logger.debug(`等待接受新消息...`);
       let res = yield checkMsg(data);
       if (!res) return logger.error(`获取新消息列表失败`);
-      if (res.retcode == 1101) return logger.warn(`账号已退出，不再获取消息`);
+      if (res.retcode == 1101) return logger.warn(`账号已退出`);
       if (res.selector == 2) {
         yield action.getMsg();
       }
@@ -103,6 +107,7 @@ const action = {
         action.checkMsg();
       }
     }).catch(err => {
+      logger.debug('checkMsg err');
       logger.error(err);
     });
   },
@@ -130,18 +135,23 @@ const action = {
         });
       }
     }).catch(err => {
+      logger.debug('getMsg err');
       logger.error(err);
     });
   },
-  sendMsg: msg => {
+  sendMsg: param => {
     return co(function* () {
-      yield sendMsg(data, msg);
+      if (!param.ToUserName) logger.warn('不能发送空的消息');
+      if (Number.isInteger(+param.ToUserName)) {
+        param.ToUserName = data.MemberList[+param.ToUserName].UserName;
+      }
+      param.FromUserName = data.User.UserName;
+      yield sendMsg(data, param);
     }).catch(err => {
       logger.error(err);
     });
   },
   logout: () => {
-    logger.debug('--logout')
     return co(function* () {
       let flag = yield logout(data);
       if (flag) return logger.debug('已退出当前账号');
@@ -160,13 +170,44 @@ const action = {
       yield action.getContact();
       yield action.getMsg();
       action.checkMsg();
+    }).catch(err => {
+      logger.debug('init err');
+      logger.error(err);
     });
   },
   closeTips: () => {
     data.showTips = false;
   },
+  showContact: param => {
+    let members = `\r\n`;
+    for (let i = param.start || 0; i < (param.end || data.MemberList.length); i++) {
+      const member = data.MemberList[i];
+      if (!member) break;
+      members += `[${i}]${member.RemarkName}(${member.NickName})\r\n`;
+    }
+    logger.debug(members);
+  },
+  findMember: param => {
+    let MemberList = data.MemberList;
+    let members = `\r\n`;
+    for (let i = 0; i < MemberList.length; i++) {
+      const member = MemberList[i];
+      if (member.NickName.indexOf(param.query) !== -1 ||
+        member.RemarkName.indexOf(param.query) !== -1) {
+        members += `[${i}]${member.RemarkName}(${member.NickName})\r\n`;
+      }
+    }
+    logger.debug(members);
+  },
+  help: () => {
+    interactive.showHelp();
+  },
   exit: () => {
-    process.exit(0);
+    return co(function* () {
+      yield action.logout();
+      logger.debug(`退出程序`);
+      process.exit(0);
+    });
   }
 }
 const addEventListener = () => {
@@ -180,7 +221,7 @@ const addEventListener = () => {
 const listeningStdInput = function () {
   process.stdin.setEncoding('utf-8');
   process.stdin.on('data', val => {
-    interactive(val.trim());
+    interactive.parseStdin(val.trim());
   });
 }
 const start = function () {
@@ -189,6 +230,12 @@ const start = function () {
     addEventListener();
     logger.info('请输入要执行的操作,如需帮助请输入 ?');
     listeningStdInput();
+    setTimeout(function () {
+      action.sendMsg({
+        content: '123',
+        ToUserName:54
+      })
+    },5000)
   });
 }
 start();

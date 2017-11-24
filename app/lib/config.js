@@ -7,7 +7,7 @@ module.exports = {
           appid: 'wx782c26e4c19acffb',
           fun: 'new',
           lang: 'zh_CN',
-          _: +new Date()
+          _: () => +new Date()
         }
       }
     },
@@ -23,7 +23,7 @@ module.exports = {
           loginicon: true,
           uuid: uuid,
           tip: tip,
-          _: +new Date()
+          _: () => +new Date()
         }
       }
     },
@@ -39,7 +39,7 @@ module.exports = {
         qs: {
           lang: 'zh_CN',
           pass_ticket: param.pass_ticket,
-          r:~new Date()
+          r:() => ~new Date()
         },
         json: {
           BaseRequest: {
@@ -60,7 +60,7 @@ module.exports = {
         qs: {
           lang: 'zh_CN',
           pass_ticket: param.pass_ticket,
-          r: +new Date(),
+          r: () => +new Date(),
           seq: 0,
           skey: param.skey,
         }
@@ -76,8 +76,8 @@ module.exports = {
       return {
         uri: 'https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck',
         qs: {
-          r: +new Date(),
-          _: +new Date(),
+          r: () => +new Date(),
+          _: () => +new Date(),
           skey: param.skey,
           sid: param.sid,
           uin: param.uin,
@@ -103,31 +103,34 @@ module.exports = {
             DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
           },
           SyncKey: param.SyncKey,
-          rr:~new Date()
+          rr:() => ~new Date()
         },
       }
     },
-    sendMsg: (param,msg) => {
+    sendMsg: (data, param) => {
+      let now = +new Date();
+      let id = now + 6546;
       return {
         method:'POST',
         uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg',
         qs: {
           lang: 'zh_CN',
-          pass_ticket:param.pass_ticket
+          pass_ticket:data.pass_ticket
         },
         json: {
           BaseRequest: {
-            Uin: param.uin,
-            Sid: param.sid,
-            Skey: param.skey,
+            Uin: data.uin,
+            Sid: data.sid,
+            Skey: data.skey,
             DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
           },
           Msg: {
-            ClientMsgId: +new Date(),
-            Content: msg.content,
-            FromUserName: msg.FromUserName,
-            LocalID: +new Date(),
-            ToUserName:msg.ToUserName
+            Type:1,
+            ClientMsgId: id,
+            Content: param.content,
+            FromUserName: param.FromUserName,
+            LocalID: id,
+            ToUserName:param.ToUserName
           },
           Sence:0
         }

@@ -8,7 +8,7 @@ const showHelp = () => {
   help            显示帮助
   init            重新登陆
   contact         获取联系人
-  send,-s         发送消息
+  send            发送消息
     --reciver,-r  消息接受者
     --content,-c  消息内容
   logout          退出账号
@@ -21,4 +21,7 @@ function parseStdin(stdin) {
   emitter.emit(action, input);
 }
 
-module.exports = parseStdin;
+module.exports = {
+  parseStdin,
+  showHelp
+};
