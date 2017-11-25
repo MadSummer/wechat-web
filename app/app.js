@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-25 17:11:01
+ * @Last Modified time: 2017-11-25 20:13:01
  */
 const co = require('co');
 const ora = require('ora');
