@@ -1,13 +1,14 @@
 module.exports = {
   url: {
     getUUID: () => {
+      let _ = +new Date();
       return {
         uri: 'https://login.wx.qq.com/jslogin',
         qs: {
           appid: 'wx782c26e4c19acffb',
           fun: 'new',
           lang: 'zh_CN',
-          _: () => +new Date()
+          _: _
         }
       }
     },
@@ -133,6 +134,27 @@ module.exports = {
             ToUserName:msg.ToUserName
           },
           Sence:0
+        }
+      }
+    },
+    revokeMsg: (param) => {
+      return {
+        method:'POST',
+        uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxrevokemsg',
+        qs: {
+          lang: 'zh_CN',
+          pass_ticket:param.pass_ticket
+        },
+        json: {
+          BaseRequest: {
+            Uin: param.uin,
+            Sid: param.sid,
+            Skey: param.skey,
+            DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
+          },
+          ClientMsgId:1,
+          SvrMsgId: id,
+          ToUserName:msg.ToUserName
         }
       }
     },

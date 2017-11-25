@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-25 16:46:58
+ * @Last Modified time: 2017-11-25 17:11:01
  */
 const co = require('co');
 const ora = require('ora');
@@ -85,6 +85,7 @@ const action = {
   checkMsg: () => {
     return co(function* () {
       let res = yield checkMsg(data);
+      if (!res) res = {};
       if (res.retcode == 1101) return logger.warn(`账号已退出`);
       if (res.selector == 2) {
         yield action.getMsg();
