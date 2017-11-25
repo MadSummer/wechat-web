@@ -107,7 +107,7 @@ module.exports = {
         },
       }
     },
-    sendMsg: (data, param) => {
+    sendMsg: (param, msg) => {
       let now = +new Date();
       let id = now + 6546;
       return {
@@ -115,22 +115,22 @@ module.exports = {
         uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg',
         qs: {
           lang: 'zh_CN',
-          pass_ticket:data.pass_ticket
+          pass_ticket:param.pass_ticket
         },
         json: {
           BaseRequest: {
-            Uin: data.uin,
-            Sid: data.sid,
-            Skey: data.skey,
+            Uin: param.uin,
+            Sid: param.sid,
+            Skey: param.skey,
             DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
           },
           Msg: {
             Type:1,
             ClientMsgId: id,
-            Content: param.content,
-            FromUserName: param.FromUserName,
+            Content: msg.content,
+            FromUserName: msg.FromUserName,
             LocalID: id,
-            ToUserName:param.ToUserName
+            ToUserName:msg.ToUserName
           },
           Sence:0
         }

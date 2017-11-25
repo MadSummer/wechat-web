@@ -2,14 +2,14 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-24 18:02:40
+ * @Last Modified time: 2017-11-25 15:26:54
  */
 const co = require('co');
 const ora = require('ora');
 
 const interactive = require('./lib/interactive');
 const emitter = require('./lib/emitter');
-const logger = require('./lib/log');
+const log4js = require('./lib/logger');
 const showQR = require('./lib/showQR');
 const config = require('./lib/config');
 
@@ -23,6 +23,8 @@ const getMsg = require('./wechatapi/getMsg');
 const sendMsg = require('./wechatapi/sendMsg');
 const logout = require('./wechatapi/logout');
 
+const logger = log4js.logger;
+const chatLogger = log4js.chat;
 let data = {
   autoGetMsg: true,
   showTips: true
@@ -126,10 +128,10 @@ const action = {
 
           } else {
             if (toUser.UserName === data.User.UserName) {
-              logger.debug(`${fromUser.NickName + (fromUser.RemarkName ? '(' + fromUser.RemarkName + ')' : '')}：${msg.Content}`);
+              chatLogger.debug(`${fromUser.NickName + (fromUser.RemarkName ? '(' + fromUser.RemarkName + ')' : '')}：${msg.Content}`);
             }
             if (fromUser.UserName === data.User.UserName) {
-              logger.debug(`我发送给${toUser.NickName + (toUser.RemarkName ? '(' + toUser.RemarkName + ')' : '')}:${msg.Content}`);
+              chatLogger.debug(`我发送给${toUser.NickName + (toUser.RemarkName ? '(' + toUser.RemarkName + ')' : '')}:${msg.Content}`);
             }
           }
         });
@@ -139,14 +141,15 @@ const action = {
       logger.error(err);
     });
   },
-  sendMsg: param => {
+  sendMsg: msg => {
     return co(function* () {
-      if (!param.ToUserName) logger.warn('不能发送空的消息');
-      if (Number.isInteger(+param.ToUserName)) {
-        param.ToUserName = data.MemberList[+param.ToUserName].UserName;
+      if (!msg.content) logger.warn('不能发送空的消息');
+      if (!msg.to) logger.warn('没有接收者');
+      if (Number.isInteger(+msg.to)) {
+        msg.ToUserName = data.MemberList[+msg.to].UserName;
       }
-      param.FromUserName = data.User.UserName;
-      yield sendMsg(data, param);
+      msg.FromUserName = data.User.UserName;
+      yield sendMsg(data, msg);
     }).catch(err => {
       logger.error(err);
     });
@@ -187,7 +190,7 @@ const action = {
     }
     logger.debug(members);
   },
-  findMember: param => {
+  search: param => {
     let MemberList = data.MemberList;
     let members = `\r\n`;
     for (let i = 0; i < MemberList.length; i++) {
@@ -201,6 +204,11 @@ const action = {
   },
   help: () => {
     interactive.showHelp();
+  },
+  setting: param => {
+    if ('saveChatRecord' in param) {
+      log4js.saveChatRecord(!!param.saveChatRecord);
+    }
   },
   exit: () => {
     return co(function* () {
@@ -230,12 +238,6 @@ const start = function () {
     addEventListener();
     logger.info('请输入要执行的操作,如需帮助请输入 ?');
     listeningStdInput();
-    setTimeout(function () {
-      action.sendMsg({
-        content: '123',
-        ToUserName:54
-      })
-    },5000)
   });
 }
 start();

@@ -1,5 +1,5 @@
 const config = require('../lib/config');
-const logger = require('../lib/log');
+const logger = require('../lib/logger').logger;
 const rp = require('../lib/rp');
 let timer;
 function login(uuid, tip) {

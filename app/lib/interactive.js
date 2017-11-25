@@ -1,4 +1,4 @@
-const logger = require('./log');
+const logger = require('./logger').logger;
 const yargs = require('yargs');
 const chalk = require('chalk');
 const emitter = require('./emitter');

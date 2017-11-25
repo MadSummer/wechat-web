@@ -1,11 +1,9 @@
 const config = require('../lib/config');
 const rp = require('../lib/rp');
-const log = require('../lib/log');
-module.exports = (data,param) => {
+module.exports = (data,msg) => {
   return new Promise((onFullfilled, onRejected) => {
-    let p = rp(config.url.sendMsg(data,param));
+    let p = rp(config.url.sendMsg(data,msg));
     p.then(res => {
-      console.log(res);
       if (!res) onFullfilled(false);
       onFullfilled(res);
     });
