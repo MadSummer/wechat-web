@@ -1,4 +1,5 @@
 const config = require('../lib/config');
+const logger = require('../lib/logger').logger;
 const rp = require('../lib/rp');
 module.exports = param => {
   return new Promise((onFullfilled, onRejected) => {
@@ -12,6 +13,9 @@ module.exports = param => {
       // 7 进入/离开聊天界面
       eval(res);
       onFullfilled(window.synccheck);
+    }, err => {
+      onFullfilled();
+      logger.error(err)
     });
   });
 }

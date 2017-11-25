@@ -1,4 +1,5 @@
 const config = require('../lib/config');
+const logger = require('../lib/logger').logger;
 const xml2js = require('xml2js');
 const rp = require('../lib/rp');
 module.exports = redirect_uri => {
@@ -21,6 +22,7 @@ module.exports = redirect_uri => {
         });
       }, err => {
         onFullfilled();
+        logger.error(err)
       });
   })
 }

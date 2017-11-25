@@ -29,6 +29,9 @@ function loopGetURL(uuid,tip,onFullfilled) {
       logger.fatal(`登录失败`);
       onFullfilled(false);
     }
+  }, err => {
+    onFullfilled();
+    logger.error(err)
   });
 }
 module.exports = login

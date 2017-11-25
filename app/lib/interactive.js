@@ -7,10 +7,9 @@ const showHelp = () => {
   Options:
   help            显示帮助
   init            重新登陆
-  contact         获取联系人
   send            发送消息
-    --reciver,-r  消息接受者
-    --content,-c  消息内容
+    --to          消息接受者
+    --content     消息内容
   logout          退出账号
   exit            退出程序
   `));
