@@ -1,21 +1,21 @@
-const config = require('../lib/config');
-const logger = require('../lib/logger').logger;
+const getLoginOpt = require('../lib/getAPIRequestOption').getLoginOpt;
+const logger = require('../lib/logger');
 const rp = require('../lib/rp');
 let timer;
 function login(uuid, tip) {
   return new Promise((onFullfilled, onRejected) => {
-    loopGetURL(uuid,tip,onFullfilled,rp);
+    loopGetURL(uuid, tip, onFullfilled, rp);
   });
 }
-function loopGetURL(uuid,tip,onFullfilled) {
-  rp.get(config.url.login(uuid, tip)).then(res => {
+function loopGetURL(uuid, tip, onFullfilled) {
+  rp(getLoginOpt(uuid,tip)).then(res => {
     if (!res) return logger.fatal(`登录失败`);
     let window = {}
     eval(res);
     if (window.code == 201) {
       logger.debug('扫码成功，请点击确认登陆');
       timer = setTimeout(() => {
-        loopGetURL(uuid,tip,onFullfilled);
+        loopGetURL(uuid, tip, onFullfilled);
       }, 1000);
     }
     if (window.code == 200) {

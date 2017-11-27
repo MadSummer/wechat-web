@@ -1,9 +1,9 @@
-const config = require('../lib/config');
+const checkMsgOpt = require('../lib/getAPIRequestOption').getCheckMsgOpt;
 const logger = require('../lib/logger').logger;
 const rp = require('../lib/rp');
 module.exports = param => {
   return new Promise((onFullfilled, onRejected) => {
-    let p = rp.get(config.url.checkMsg(param));
+    let p = rp(checkMsgOpt(param));
     let window = {};
     p.then(res => {
       if (!res) onFullfilled(false);

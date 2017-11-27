@@ -1,9 +1,9 @@
-const config = require('../lib/config');
-const logger = require('../lib/logger').logger;
-const rp = require('../lib/rp');
-module.exports = param => {
+const  getContactOpt = require( '../lib/getAPIRequestOption').getContactOpt;
+const { logger } = require('../lib/logger');
+const rp =  require('../lib/rp');
+module.exports =  param => {
   return new Promise((onFullfilled, onRejected) => {
-    let p = rp.get(config.url.getContact(param));
+    let p = rp(getContactOpt(param));
     p.then(res => {
       if (!res) onFullfilled(false);
       res = JSON.parse(res);
@@ -11,7 +11,7 @@ module.exports = param => {
         MemberCount: res.MemberCount,
         male: 0,
         female: 0,
-        MemberList:res.MemberList
+        MemberList: res.MemberList
       }
       res.MemberList.forEach(member => {
         if (member.Sex == 2) obj.female += 1;

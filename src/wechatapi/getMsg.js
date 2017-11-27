@@ -1,4 +1,4 @@
-const config = require('../lib/config');
+const  getMsgOpt  = require('../lib/getAPIRequestOption').getMsgOpt;
 const logger = require('../lib/logger').logger;
 const rp = require('../lib/rp');
 module.exports = param => {

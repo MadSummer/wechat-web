@@ -19,26 +19,27 @@ const conf = {
       level: 'debug'
     },
     chat: {
-      appenders: ['log'],
+      appenders: [],
       level: 'debug'
     }
   }
 }
 log4js.configure(conf);
-const logger = log4js.getLogger();
-const chat = log4js.getLogger('chat');
+let logger = log4js.getLogger();
+let chatLogger = log4js.getLogger('chat');
+let saveChatRecord = flag => {
+  if (flag) {
+    conf.categories.chat.appenders = ['chat', 'log'];
+  } else {
+    conf.categories.chat.appenders = ['log'];
+  }
+  log4js.shutdown(() => {
+    log4js.configure(conf);
+  });
+
+}
 module.exports = {
   logger,
-  chat,
-  saveChatRecord: flag => {
-    if (flag) {
-      conf.categories.chat.appenders = ['chat', 'log'];
-    } else {
-      conf.categories.chat.appenders = ['log'];
-    }
-    log4js.shutdown(() => {
-      log4js.configure(conf);
-    });
-    
-  }
-};
+  chatLogger,
+  saveChatRecord
+}

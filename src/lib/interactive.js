@@ -1,4 +1,4 @@
-const logger = require('./logger').logger;
+const { logger } = require('./logger');
 const yargs = require('yargs');
 const chalk = require('chalk');
 const emitter = require('./emitter');
@@ -19,8 +19,7 @@ function parseStdin(stdin) {
   const action = input._[0];
   emitter.emit(action, input);
 }
-
-module.exports = {
+module.exports= {
   parseStdin,
   showHelp
 };

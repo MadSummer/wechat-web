@@ -1,11 +1,10 @@
-const config = require('../lib/config');
+const getRedicetURLOpt = require('../lib/getAPIRequestOption').getRedicetURLOpt;
 const logger = require('../lib/logger').logger;
-const xml2js = require('xml2js');
 const rp = require('../lib/rp');
+const xml2js = require('xml2js');
 module.exports = redirect_uri => {
   return new Promise((onFullfilled, onRejected) => {
-    rp
-      .get(config.url.getRedicetURL(redirect_uri))
+    rp(getRedicetURLOpt(redirect_uri))
       .then(res => {
         xml2js.parseString(res, (err, result) => {
           if (err) return onFullfilled(false);
