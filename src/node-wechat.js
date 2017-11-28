@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-28 18:01:18
+ * @Last Modified time: 2017-11-28 18:15:06
  */
 const co = require('co');
 const ora = require('ora');
@@ -35,7 +35,7 @@ class NodeWechat {
     this.data.uuid = await getUUID;
     if (!this.data.uuid) {
       this.emit('error', {
-        type:'uuid',
+        type: 'uuid',
         message: ' 获取UUID失败'
       });
     };
@@ -84,7 +84,7 @@ class NodeWechat {
     this.emit('get.contact.start');
     let obj = await getContact(this.data);
     this.data.MemberList = obj.MemberList;
-    this.emit('get.contact.end',obj.MemberList);
+    this.emit('get.contact.end', obj.MemberList);
   }
   async checkMsg() {
     let res = await checkMsg(this.data);
@@ -172,12 +172,15 @@ class NodeWechat {
   }
   search(param) {
     let MemberList = this.data.MemberList;
-    let members = `\r\n`;
+    let members = [];
     for (let i = 0; i < MemberList.length; i++) {
       const member = MemberList[i];
-      if (member.NickName.indexOf(param.query) !== -1 ||
-        member.RemarkName.indexOf(param.query) !== -1) {
-        members += `[${i}]${member.RemarkName}(${member.NickName})\r\n`;
+      if (member.RemarkName.indexOf(param.query) !== -1) {
+        members.push(member.RemarkName);
+        continue;
+      }
+      if (member.NickName.indexOf(param.query) !== -1) {
+        members.push(member.NickName)
       }
     }
     return members;

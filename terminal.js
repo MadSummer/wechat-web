@@ -26,9 +26,13 @@ function parseStdin(stdin) {
     showHelp()
   }
   if (action === 'send') {
-    wechat.sendMsg()
+    wechat.sendMsg({
+      content: input.content,
+      to:input.to
+    })
   }
   if (action === 'search') {
+    console.log(wechat.data.MemberList);
     logger.debug(`查找包含${input.query}的用户`);
     let result = wechat.search({
       query:input.query
@@ -58,10 +62,6 @@ wechat
   .on('get.contact.end', members => {
     spinner.succeed(`获取联系人完成`);
     logger.debug(`获取到${members.length}个联系人`)
-    let result = wechat.search({
-      query:'文件'
-    });
-    logger.debug(result);
   })
   .on('message', data => {
     data.forEach(msg => {
