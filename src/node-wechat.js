@@ -2,18 +2,20 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-27 17:15:26
+ * @Last Modified time: 2017-11-28 17:41:07
  */
 const co = require('co');
 const ora = require('ora');
 const { parseStdin, showHelp } = require('./lib/interactive');
 const emitter = require('./lib/emitter');
-const { logger, chatLogger } = require('./lib/logger');
-const showQR = require('./lib/showQR');
+const { logger } = require('./lib/logger');
+const QR = require('./lib/qr');
+const sleep = require('./lib/sleep');
+const parseWechatMsg = require('./lib/parseWechatMsg');
 
 const getUUID = require('./wechatapi/getUUID');
 const getQR = require('./wechatapi/getQR');
-const login = require('./wechatapi/login');
+const scanQR = require('./wechatapi/scanQR');
 const getRedictURL = require('./wechatapi/getRedictURL');
 const initWebWX = require('./wechatapi/initWebWX');
 const getContact = require('./wechatapi/getContact');
@@ -32,33 +34,48 @@ class NodeWechat {
   }
   async getUUID() {
     this.data.uuid = await getUUID;
-    if (!this.data.uuid) { 
+    if (!this.data.uuid) {
       this.emit('error', {
+        type:'uuid',
         message: ' 获取UUID失败'
       });
     };
   }
   showQR() {
-    showQR(getQR(this.data.uuid));
+    let qr = QR(getQR(this.data.uuid).uri);
+    this.emit('qr', {
+      qr: qr,
+      url: getQR(this.data.uuid).uri
+    });
   }
-  async login() {
-    this.data.redirect_uri = (await login(this.data.uuid, 1)).redirect_uri;
+  async scanQR() {
+    let res = await scanQR(this.data.uuid, 1);
+    if (res.code == 201) {
+      this.emit('qr.waiting', res);
+      await sleep(1000);
+      await this.scanQR();
+    }
+    if (res.code == 200) {
+      this.data.redirect_uri = res.redirect_uri;
+    }
+    if (res.code == 408) {
+      this.emit('login.error', res);
+    }
   }
   async getRedictURL() {
-    let info = await getRedictURL(this.redirect_uri);
+    let info = await getRedictURL(this.data.redirect_uri);
     if (!info) {
       return this.emit('error', {
-        message:'登录失败'
+        message: '登录失败'
       });
     }
     Object.assign(this.data, info);
-    this.emit('login');
   }
   async initWebWX() {
     let initData = await initWebWX(this.data);
     if (!initData) {
       this.emit('error', {
-        message:'获取个人信息失败'
+        message: '获取个人信息失败'
       });
     };
     Object.assign(this.data, initData);
@@ -67,29 +84,30 @@ class NodeWechat {
   async getContact() {
     this.emit('get.contact.start');
     let obj = await getContact(this.data);
-    this.emit('get.contact.end');
+    this.emit('get.contact.end',obj.MemberList);
     this.data.MemberList = obj.MemberList;
   }
   async checkMsg() {
-    let res = await checkMsg(data);
+    let res = await checkMsg(this.data);
     if (!res) res = {};
-    if (res.retcode == 1101) return logger.warn(`账号已退出`);
+    if (res.retcode == 1101) return this.emit('logout', res);
+    if (res.retcode == 1102) return console.log('cookie error');;
     if (res.selector == 2) {
       await this.getMsg();
     }
-    if (data.autoGetMsg) {
+    if (this.data.autoGetMsg) {
       this.checkMsg();
     }
   }
   async getMsg() {
-    let res = await getMsg(data);
+    let res = await getMsg(this.data);
     this.data.SyncCheckKey = res.SyncCheckKey
     this.data.SyncKey = res.SyncKey;
     if (res.AddMsgList.length > 0) {
       const msgs = [];
       res.AddMsgList.forEach(msg => {
-        let fromUser = tools.getMemberByUserName(msg.FromUserName);
-        let toUser = tools.getMemberByUserName(msg.ToUserName);
+        let fromUser = this.getMemberByUserName(msg.FromUserName);
+        let toUser = this.getMemberByUserName(msg.ToUserName);
         if (!fromUser) fromUser = { NickName: '<空>' }
         if (!toUser) toUser = { NickName: '<空>' }
         if (!msg.Content) {
@@ -99,7 +117,7 @@ class NodeWechat {
           msg.ToUser = toUser;
           msgs.push(msg);
         }
-        this.emit('getMsg', msgs);
+        this.emit('message', msgs);
       });
     }
   }
@@ -111,46 +129,50 @@ class NodeWechat {
    * @returns {PromiseLike}
    */
   async sendMsg(msg) {
-    if (!msg.content) logger.warn('不能发送空的消息');
-    if (!msg.to) logger.warn('没有接收者');
+    if (!msg.content) return this.emit('error', {
+      type: 'send',
+      message: '不能发送空消息'
+    });
+    if (!msg.to) return this.emit('error', {
+      type: 'send',
+      message: '没有指定接收者'
+    });
     if (Number.isInteger(+msg.to)) {
-      if (!data.MemberList[+msg.to]) return logger.warn(`未查找到第${+msg.to}位联系人`);
-      msg.to = data.MemberList[+msg.to].UserName;
+      if (!this.data.MemberList[+msg.to]) return this.emit('error', {
+        type: 'send',
+        message: `未查找到第${+msg.to}位联系人`
+      });
+      msg.to = this.data.MemberList[+msg.to].UserName;
     }
-    msg.from = data.User.UserName;
-    let res = await sendMsg(data, msg);
-    this.emit('sendMsgSuccessful', msg);
+    msg.from = this.data.User.UserName;
+    let res = await sendMsg(this.data, msg);
+    this.emit('send', msg);
   }
   async logout() {
-    let flag = await logout(data);
-    if (flag) {
-      this.emit('logout')
-      logger.debug('已退出当前账号')
-      return;
-    };
+    let flag = await logout(this.data);
+    if (flag) return this.emit('logout')
   }
   async init() {
     await this.getUUID();
     this.showQR();
-    await this.login();
+    await this.scanQR();
     await this.getRedictURL();
     await this.initWebWX();
     await this.getContact();
     await this.getMsg();
     this.checkMsg();
-    this.emit('init');
   }
   showContact(param) {
     let members = `\r\n`;
-    for (let i = param.start || 0; i < (param.end || data.MemberList.length); i++) {
-      const member = data.MemberList[i];
+    for (let i = param.start || 0; i < (param.end || this.data.MemberList.length); i++) {
+      const member = this.data.MemberList[i];
       if (!member) break;
       members += `[${i}]${member.RemarkName}(${member.NickName})\r\n`;
     }
     logger.debug(members);
   }
   search(param) {
-    let MemberList = data.MemberList;
+    let MemberList = this.data.MemberList;
     let members = `\r\n`;
     for (let i = 0; i < MemberList.length; i++) {
       const member = MemberList[i];
@@ -171,9 +193,9 @@ class NodeWechat {
   }
   getMemberByUserName(Username) {
     if (!this.data.MemberList) return logger.warn(`没有获取到联系人`);
-    for (let i = 0; i < data.MemberList.length; i++) {
-      const member = data.MemberList[i];
-      if (member.UserName === UserName) {
+    for (let i = 0; i < this.data.MemberList.length; i++) {
+      const member = this.data.MemberList[i];
+      if (member.UserName === Username) {
         return member;
       }
     }

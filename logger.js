@@ -19,7 +19,7 @@ const conf = {
       level: 'debug'
     },
     chat: {
-      appenders: [],
+      appenders: ['chat'],
       level: 'debug'
     }
   }

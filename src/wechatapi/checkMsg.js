@@ -1,5 +1,4 @@
 const checkMsgOpt = require('../lib/getAPIRequestOption').getCheckMsgOpt;
-const logger = require('../lib/logger').logger;
 const rp = require('../lib/rp');
 module.exports = param => {
   return new Promise((onFullfilled, onRejected) => {
@@ -15,7 +14,6 @@ module.exports = param => {
       onFullfilled(window.synccheck);
     }, err => {
       onFullfilled();
-      logger.error(err)
     });
   });
 }

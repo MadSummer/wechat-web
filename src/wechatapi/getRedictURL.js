@@ -1,5 +1,5 @@
 const getRedicetURLOpt = require('../lib/getAPIRequestOption').getRedicetURLOpt;
-const logger = require('../lib/logger').logger;
+const logger = require('../lib/logger')
 const rp = require('../lib/rp');
 const xml2js = require('xml2js');
 module.exports = redirect_uri => {
