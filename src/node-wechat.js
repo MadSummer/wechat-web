@@ -2,11 +2,10 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-28 17:41:07
+ * @Last Modified time: 2017-11-28 18:01:18
  */
 const co = require('co');
 const ora = require('ora');
-const { parseStdin, showHelp } = require('./lib/interactive');
 const emitter = require('./lib/emitter');
 const { logger } = require('./lib/logger');
 const QR = require('./lib/qr');
@@ -84,8 +83,8 @@ class NodeWechat {
   async getContact() {
     this.emit('get.contact.start');
     let obj = await getContact(this.data);
-    this.emit('get.contact.end',obj.MemberList);
     this.data.MemberList = obj.MemberList;
+    this.emit('get.contact.end',obj.MemberList);
   }
   async checkMsg() {
     let res = await checkMsg(this.data);
@@ -181,7 +180,7 @@ class NodeWechat {
         members += `[${i}]${member.RemarkName}(${member.NickName})\r\n`;
       }
     }
-    logger.debug(members);
+    return members;
   }
   help() {
     interactive.showHelp();

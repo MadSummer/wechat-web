@@ -1,10 +1,44 @@
+const yargs = require('yargs');
+const chalk = require('chalk');
 const wechat = require('./src/node-wechat');
 const logger = require('./logger');
 const qrTerminal = require('qrcode-terminal');
 const ora = require('ora');
-let spinner
+let spinner;
+
+const showHelp = () => {
+  logger.debug(chalk.green(`
+  Options:
+  help            显示帮助
+  init            重新登陆
+  send            发送消息
+    --to          消息接受者
+    --content     消息内容
+  logout          退出账号
+  exit            退出程序
+  `));
+}
+
+function parseStdin(stdin) {
+  const input = yargs.help(false).parse(stdin);
+  const action = input._[0];
+  if (action === 'help') {
+    showHelp()
+  }
+  if (action === 'send') {
+    wechat.sendMsg()
+  }
+  if (action === 'search') {
+    logger.debug(`查找包含${input.query}的用户`);
+    let result = wechat.search({
+      query:input.query
+    });
+    logger.debug(result);
+  }
+}
+
 process.stdin.addListener('data', function (data) {
-  logger.debug(data.toString())
+  parseStdin(data.toString());
 })
 wechat
   .on('qr', data => {
@@ -24,6 +58,10 @@ wechat
   .on('get.contact.end', members => {
     spinner.succeed(`获取联系人完成`);
     logger.debug(`获取到${members.length}个联系人`)
+    let result = wechat.search({
+      query:'文件'
+    });
+    logger.debug(result);
   })
   .on('message', data => {
     data.forEach(msg => {
@@ -45,5 +83,5 @@ wechat
   .on('logout', data => {
     logger.debug('账号退出')
   })
-  .init()
+  .init();
 
