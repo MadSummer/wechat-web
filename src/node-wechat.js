@@ -2,13 +2,15 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-29 18:41:51
+ * @Last Modified time: 2017-11-29 22:46:57
  */
-const error = require('error-ex');
+const errorEx = require('error-ex');
 const co = require('co');
 const ora = require('ora');
 const emitter = require('./lib/emitter');
-const { logger } = require('./lib/logger');
+const {
+  logger
+} = require('./lib/logger');
 const QR = require('./lib/qr');
 const sleep = require('./lib/sleep');
 const parseWechatMsg = require('./lib/parseWechatMsg');
@@ -34,11 +36,7 @@ class NodeWechat {
   }
   async getUUID() {
     this.data.uuid = await getUUID();
-    this.data.uuid = null;
-    if (!this.data.uuid) {
-      let error = new Error('未获取到UUID');
-      throw error//this.error(new Error('未获取到UUID'), 'UUID')
-    }
+    if (!this.data.uuid) throw new Error('没有获取到UUID');
   }
   showQR() {
     let qr = QR(getQR(this.data.uuid).uri);
@@ -58,44 +56,43 @@ class NodeWechat {
     if (res.code == 200) {
       this.data.redirect_uri = res.redirect_uri;
     }
-    if (res.code == 408) {
-      throw {
-        type: 'qr',
-        message: '获取扫码结果错误'
-      };
-    }
+    if (res.code == 408) throw new Error('扫码结果失败');
   }
   async getRedictURL() {
     let info = await getRedictURL(this.data.redirect_uri);
+    if (!info) throw new Error(`请求${this.data.redirect_uri}失败`);
     Object.assign(this.data, info);
   }
   async initWebWX() {
     let initData = await initWebWX(this.data);
+    if (!initData) throw new Error(`拉取信息失败`);
     Object.assign(this.data, initData);
     this.emit('info', initData.User);
   }
   async getContact() {
     this.emit('contact.get.start');
-    let obj = await getContact(this.data);
-    this.data.MemberList = obj.MemberList;
-    this.emit('contact.get.end', obj.MemberList);
+    let memberList = await getContact(this.data);
+    this.data.MemberList = memberList;
+    this.emit('contact.get.end', memberList);
   }
   async checkMsg() {
-    let res = await checkMsg(this.data);
+    let res = await checkMsg(this.data).catch(error => {
+      this.emit('error', error);
+    });
     if (!res) res = {};
-    if (res.retcode == 1101) return this.emit('notlogin', res);
-    if (res.retcode == 1102) return this.emit('error',
-      this.error(
-        new Error('cookie错误'), 'check'
-      )
-    );
+    if (res.retcode == 1101) return;
+    if (res.retcode == 1102) return;
     if (res.selector == 2) {
-      await this.getMsg();
+      await this.getMsg().catch(error => {
+        this.emit('error', error);
+      });
     }
-    await this.checkMsg();
+    this.checkMsg();
   }
   async getMsg() {
-    let res = await getMsg(this.data);
+    let res = await getMsg(this.data).catch(error => {
+      this.emit('error', error);
+    });
     this.data.SyncCheckKey = res.SyncCheckKey
     this.data.SyncKey = res.SyncKey;
     if (res.AddMsgList.length > 0) {
@@ -103,8 +100,12 @@ class NodeWechat {
       res.AddMsgList.forEach(msg => {
         let fromUser = this.getMemberByUserName(msg.FromUserName);
         let toUser = this.getMemberByUserName(msg.ToUserName);
-        if (!fromUser) fromUser = { NickName: '<空>' }
-        if (!toUser) toUser = { NickName: '<空>' }
+        if (!fromUser) fromUser = {
+          NickName: '<空>'
+        }
+        if (!toUser) toUser = {
+          NickName: '<空>'
+        }
         if (!msg.Content) {
 
         } else {
@@ -155,9 +156,9 @@ class NodeWechat {
       await this.getRedictURL();
       await this.initWebWX();
       await this.getContact();
+      this.emit('init', this.data);
       await this.getMsg();
       this.checkMsg();
-      this.emit('init', this.data);
     } catch (error) {
       this.emit('error', error)
     }
@@ -210,11 +211,6 @@ class NodeWechat {
   emit(evt, data) {
     emitter.emit(evt, data);
     return this;
-  }
-  error(error, type) {
-    var JSONError = errorEx('JSONError');
-    var err = new JSONError('error');
-    return err
   }
 }
 const addEventListener = () => {
