@@ -66,6 +66,27 @@ const getContactOpt = param => {
     }
   }
 }
+const getGroupOpt = (param,list) => {
+  return {
+    method:'POST',
+    uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact',
+    qs: {
+      type: 'ex',
+      r: () => +new Date(),
+      pass_ticket:param.pass_ticket
+    },
+    json: {
+      BaseRequest: {
+        Uin: param.uin,
+        Sid: param.sid,
+        Skey: param.skey,
+        DeviceID: 'e' + ('' + Math.random().toFixed(15)).substring(2, 17),
+      },
+      Count: list.length,
+      List:list
+    }
+  }
+}
 const getCheckMsgOpt = param => {
   let synckey = [];
   param.SyncCheckKey.List.forEach(list => {
@@ -179,6 +200,7 @@ module.exports = {
   getRedicetURLOpt,
   getInitWebWXOpt,
   getContactOpt,
+  getGroupOpt,
   getCheckMsgOpt,
   getMsgOpt,
   getSendMsgOpt,

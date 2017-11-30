@@ -2,15 +2,13 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-29 22:46:57
+ * @Last Modified time: 2017-11-30 13:45:18
  */
 const errorEx = require('error-ex');
 const co = require('co');
 const ora = require('ora');
 const emitter = require('./lib/emitter');
-const {
-  logger
-} = require('./lib/logger');
+const logger = require('./lib/logger');
 const QR = require('./lib/qr');
 const sleep = require('./lib/sleep');
 const parseWechatMsg = require('./lib/parseWechatMsg');
@@ -21,6 +19,7 @@ const scanQR = require('./wechatapi/scanQR');
 const getRedictURL = require('./wechatapi/getRedictURL');
 const initWebWX = require('./wechatapi/initWebWX');
 const getContact = require('./wechatapi/getContact');
+const getGroup = require('./wechatapi/getGroup');
 const checkMsg = require('./wechatapi/checkMsg');
 const getMsg = require('./wechatapi/getMsg');
 const sendMsg = require('./wechatapi/sendMsg');
@@ -73,16 +72,49 @@ class NodeWechat {
     this.emit('contact.get.start');
     let memberList = await getContact(this.data);
     this.data.MemberList = memberList;
+    await this.getGroupMemberList();
     this.emit('contact.get.end', memberList);
+  }
+  async getGroupMemberList() {
+    let groupList = [];
+    function addToGroup(newGroup) {
+      for (let i = 0; i < groupList.length; i++) {
+        const group = groupList[i];
+        if (group.UserName == newGroup.UserName) return;
+      }
+      groupList.push(newGroup);
+    }
+    // 获取保存到通讯录的群组
+    for (let i = 0; i < this.data.MemberList.length; i++) {
+      const member = this.data.MemberList[i];
+      if (member.UserName && member.UserName.indexOf('@@') != -1) {
+        addToGroup.call(this, {
+          EncryChatRoomId: '',
+          UserName: member.UserName
+        });
+      }
+    }
+    // 获取最近联系的群组，包含未保存到通讯录的
+    for (let i = 0; i < this.data.ContactList.length; i++) {
+      const member = this.data.ContactList[i];
+      if (member.UserName && member.UserName.indexOf('@@') != -1) {
+        addToGroup.call(this, {
+          EncryChatRoomId: '',
+          UserName: member.UserName
+        });
+      }
+    }
+    this.data.GroupMemberList = await getGroup(this.data, groupList);
   }
   async checkMsg() {
     let res = await checkMsg(this.data).catch(error => {
       this.emit('error', error);
     });
     if (!res) res = {};
-    if (res.retcode == 1101) return;
+    if (res.retcode == 1101) return this.emit('logout');
     if (res.retcode == 1102) return;
-    if (res.selector == 2) {
+    //修改备注可能出发selector=6
+    if (+res.selector < 7) {
       await this.getMsg().catch(error => {
         this.emit('error', error);
       });
@@ -98,23 +130,19 @@ class NodeWechat {
     if (res.AddMsgList.length > 0) {
       const msgs = [];
       res.AddMsgList.forEach(msg => {
-        let fromUser = this.getMemberByUserName(msg.FromUserName);
-        let toUser = this.getMemberByUserName(msg.ToUserName);
-        if (!fromUser) fromUser = {
+        msg = parseWechatMsg(msg);
+        msg.FromUser = this.getMemberByUserName(msg.FromUserName) || {
           NickName: '<空>'
-        }
-        if (!toUser) toUser = {
+        };
+        msg.ToUser = this.getMemberByUserName(msg.ToUserName) || {
           NickName: '<空>'
+        };
+        if (msg.isGroupMsg) {
+          msg.GroupMsgSenderUser = this.getMemberByUserName(msg.groupMsgSenderUserName);
         }
-        if (!msg.Content) {
-
-        } else {
-          msg.FromUser = fromUser;
-          msg.ToUser = toUser;
-          msgs.push(msg);
-        }
-        this.emit('message', msgs);
+        msgs.push(msg);
       });
+      this.emit('message', msgs);
     }
   }
   /**
@@ -195,12 +223,22 @@ class NodeWechat {
       log4js.saveChatRecord(!!param.saveChatRecord);
     }
   }
-  getMemberByUserName(Username) {
-    if (!this.data.MemberList) return logger.warn(`没有获取到联系人`);
-    for (let i = 0; i < this.data.MemberList.length; i++) {
-      const member = this.data.MemberList[i];
-      if (member.UserName === Username) {
+  getMemberByUserName(UserName) {
+    let list;
+    UserName.indexOf('@@') != -1 ?
+      list = this.data.GroupMemberList : list = this.data.MemberList;
+    for (let i = 0; i < list.length; i++) {
+      const member = list[i];
+      if (member.UserName === UserName) {
         return member;
+      }
+      if (member.MemberList && UserName.indexOf('@@') == -1) {
+        for (let j = 0; j < member.MemberList.length; j++) {
+          const memberInGroup = member.MemberList[j];
+          if (memberInGroup.UserName === UserName) {
+            return memberInGroup;
+          }
+        }
       }
     }
   }
