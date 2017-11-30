@@ -6,20 +6,9 @@ const qrTerminal = require('qrcode-terminal');
 const ora = require('ora');
 const inquirer = require('inquirer');
 let spinner;
+process.on('uncaughtException', () => {
 
-const showHelp = () => {
-  logger.debug(chalk.green(`
-  Options:
-  help            显示帮助
-  init            重新登陆
-  send            发送消息
-    --to          消息接受者
-    --content     消息内容
-  logout          退出账号
-  exit            退出程序
-  `));
-}
-
+})
 function parseStdin(stdin) {
   const input = yargs.help(false).parse(stdin);
   const action = input._[0];
@@ -52,10 +41,7 @@ wechat
   })
   .on('init', data => {
     logger.debug(`用户${data.User.NickName}初始化成功`);
-    /* inquirer.prompt(questions).then(answers => {
-      console.log('\nOrder receipt:');
-      console.log(JSON.stringify(answers, null, '  '));
-    }); */
+    showAction();
   })
   .on('contact.get.start', () => {
     spinner = ora('正在获取联系人').start()
@@ -68,23 +54,17 @@ wechat
     data.forEach(msg => {
       switch (msg.MsgType) {
         case 1:
-          let [fn, fr, tn, tr, gs] = [
-            msg.FromUser.NickName,
-            msg.FromUser.RemarkName === '' ? '' : `(${msg.FromUser.RemarkName})`,
-            msg.ToUser.NickName,
-            msg.ToUser.RemarkName === '' ? '' : `(${msg.ToUser.RemarkName})`,
-            msg.isGroupMsg ?
-              (msg.GroupMsgSenderUser.RemarkName
-                || msg.GroupMsgSenderUser.DisplayName
-                || msg.GroupMsgSenderUser.NickName) + ':'
-              : ''
-          ]
-          let msgDetails
+          let gs = msg.isGroupMsg ?
+            (msg.GroupMsgSenderUser.RemarkName
+              || msg.GroupMsgSenderUser.DisplayName
+              || msg.GroupMsgSenderUser.NickName) + ':'
+            : ''
+          let msgDetails;
           if (msg.isGroupMsg) {
             let groupNickName = msg.FromUser.UserName === wechat.data.User.UserName ? tn : fn;
             msgDetails = `群消息(${groupNickName}) : ${gs}${msg.Content}`;
           } else {
-            msgDetails = `${fn}${fr} to ${tn}${tr} : ${msg.Content}`;
+            msgDetails = `${wechat.getFullName(msg.FromUser)} to ${wechat.getFullName(msg.ToUser)} : ${msg.Content}`;
           }
           logger.debug(msgDetails);
           break;
@@ -94,7 +74,7 @@ wechat
         default:
           break;
       }
-    })
+    });
   })
   .on('send', data => {
     logger.debug(data)
@@ -106,87 +86,124 @@ wechat
     logger.error(error);
   })
   .init();
+function showAction() {
+  const actionQuestion = [
+    {
+      type: 'list',
+      name: 'action',
+      message: '请选择操作',
+      choices: [
+        {
+          name: '查找联系人',
+          value: 'search'
+        },
+        {
+          name: '发送消息',
+          value: 'send'
+        },
+        {
+          name: '退出账号',
+          value: 'logout'
+        },
+        {
+          name: '退出程序',
+          value: 'exit'
+        }
+      ]
+    }
+  ];
+  inquirer.prompt(actionQuestion).then(answer => {
+    switch (answer.action) {
+      case 'search':
+        search();
+        break;
 
-var questions = [{
-  type: 'confirm',
-  name: 'toBeDelivered',
-  message: 'Is this for delivery?',
-  default: false
-},
-{
-  type: 'input',
-  name: 'phone',
-  message: "What's your phone number?",
-  validate: function (value) {
-    var pass = value.match(
-      /^([01]{1})?[-.\s]?\(?(\d{3})\)?[-.\s]?(\d{3})[-.\s]?(\d{4})\s?((?:#|ext\.?\s?|x\.?\s?){1}(?:\d+)?)?$/i
-    );
-    if (pass) {
-      return true;
+      default:
+        break;
+    }
+  });
+}
+function sendMsg() {
+  const sendMsgQuestion = [
+    {
+
+    }
+  ]
+}
+
+function search() {
+  const searchQuestion = [
+    {
+      type: 'input',
+      name: 'kw',
+      message: '请输入关键字(昵称或者备注):',
+      validate: str => str.trim() === '' ? '输入不能为空' : true
+    }
+  ]
+  inquirer.prompt(searchQuestion).then(answer => {
+    let result = wechat.searchContact({
+      kw: answer.kw
+    });
+    if (result.length == 0) {
+      logger.warn(`未查找到任何联系人:${answer.kw}`);
+      showAction();
+    } else {
+      const memberChioce = [];
+      result.forEach(member => {
+        memberChioce.push({
+          name: wechat.getFullName(member),
+          value: member.UserName
+        });
+      });
+      showMember(memberChioce)
+    }
+  });
+}
+function showMember(memberList) {
+  const memberQuestion = [{
+    type: 'list',
+    name: 'member',
+    message: '请选择联系人',
+    choices: memberList.slice()
+  }];
+  memberQuestion[0].choices.push({
+    name: '返回主菜单',
+    value: '0'
+  })
+  inquirer.prompt(memberQuestion).then(answer => {
+    if (answer.member === '0') {
+      showAction();
+    } else {
+      showMemberAction(answer.member, memberList);
     }
 
-    return 'Please enter a valid phone number';
-  }
-},
-{
-  type: 'list',
-  name: 'size',
-  message: 'What size do you need?',
-  choices: ['Large', 'Medium', 'Small'],
-  filter: function (val) {
-    return val.toLowerCase();
-  }
-},
-{
-  type: 'input',
-  name: 'quantity',
-  message: 'How many do you need?',
-  validate: function (value) {
-    var valid = !isNaN(parseFloat(value));
-    return valid || 'Please enter a number';
-  },
-  filter: Number
-},
-{
-  type: 'expand',
-  name: 'toppings',
-  message: 'What about the toppings?',
-  choices: [{
-    key: 'p',
-    name: 'Pepperoni and cheese',
-    value: 'PepperoniCheese'
-  },
-  {
-    key: 'a',
-    name: 'All dressed',
-    value: 'alldressed'
-  },
-  {
-    key: 'w',
-    name: 'Hawaiian',
-    value: 'hawaiian'
-  }
-  ]
-},
-{
-  type: 'rawlist',
-  name: 'beverage',
-  message: 'You also get a free 2L beverage',
-  choices: ['Pepsi', '7up', 'Coke']
-},
-{
-  type: 'input',
-  name: 'comments',
-  message: 'Any comments on your purchase experience?',
-  default: 'Nope, all good!'
-},
-{
-  type: 'list',
-  name: 'prize',
-  message: 'For leaving a comment, you get a freebie',
-  choices: ['cake', 'fries'],
-  when: function (answers) {
-    return answers.comments !== 'Nope, all good!';
-  }
+  });
 }
-];
+
+function showMemberAction(member, memberList) {
+  const memberActionQuestion = [{
+    type: 'list',
+    name: 'memberAction',
+    message: '请选择操作',
+    choices: [
+      {
+        name: '发送消息',
+        value: 'send'
+      },
+      {
+        name: '查看详情',
+        value: 'info'
+      },
+      {
+        name: '返回上一级',
+        value: '0'
+      }
+    ]
+  }];
+  inquirer.prompt(memberActionQuestion).then(answer => {
+    if (answer.memberAction === '0') {
+      if (memberList) return showMember(memberList);
+      showAction();
+    }
+  })
+}

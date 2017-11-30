@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-30 13:45:18
+ * @Last Modified time: 2017-11-30 17:35:02
  */
 const errorEx = require('error-ex');
 const co = require('co');
@@ -200,19 +200,21 @@ class NodeWechat {
     }
     logger.debug(members);
   }
-  search(param) {
-    let MemberList = this.data.MemberList;
+  searchContact(param) {
     let members = [];
-    for (let i = 0; i < MemberList.length; i++) {
-      const member = MemberList[i];
-      if (member.RemarkName.indexOf(param.query) !== -1) {
-        members.push(member.RemarkName);
-        continue;
-      }
-      if (member.NickName.indexOf(param.query) !== -1) {
-        members.push(member.NickName)
+    let MemberList = this.data.MemberList;
+    let GroupMemberList = this.data.GroupMemberList;
+    function find(list, query) {
+      for (let i = 0; i < list.length; i++) {
+        const member = list[i];
+        if (member.RemarkName.indexOf(query) !== -1 || member.NickName.indexOf(query) !== -1) {
+          members.push(member);
+          continue;
+        }
       }
     }
+    find(MemberList, param.kw);
+    find(GroupMemberList, param.kw);
     return members;
   }
   help() {
@@ -241,6 +243,9 @@ class NodeWechat {
         }
       }
     }
+  }
+  getFullName(member) {
+    return `${member.NickName}${member.RemarkName ? '(' + member.RemarkName + ')': ''}`
   }
   on(evt, cb) {
     emitter.on(evt, cb)
