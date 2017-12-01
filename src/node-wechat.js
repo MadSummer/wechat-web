@@ -2,11 +2,8 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-11-30 17:35:02
+ * @Last Modified time: 2017-12-01 14:59:35
  */
-const errorEx = require('error-ex');
-const co = require('co');
-const ora = require('ora');
 const emitter = require('./lib/emitter');
 const logger = require('./lib/logger');
 const QR = require('./lib/qr');
@@ -28,10 +25,7 @@ const logout = require('./wechatapi/logout');
 
 class NodeWechat {
   constructor() {
-    this.data = {
-      autoGetMsg: true,
-      showTips: true
-    }
+    this.data = {}
   }
   async getUUID() {
     this.data.uuid = await getUUID();
@@ -173,7 +167,9 @@ class NodeWechat {
     this.emit('send', msg);
   }
   async logout() {
-    let flag = await logout(this.data);
+    let flag = await logout(this.data).catch(err => {
+
+    });
     if (flag) return this.emit('logout')
   }
   async init() {
@@ -217,14 +213,6 @@ class NodeWechat {
     find(GroupMemberList, param.kw);
     return members;
   }
-  help() {
-    interactive.showHelp();
-  }
-  setting(param) {
-    if ('saveChatRecord' in param) {
-      log4js.saveChatRecord(!!param.saveChatRecord);
-    }
-  }
   getMemberByUserName(UserName) {
     let list;
     UserName.indexOf('@@') != -1 ?
@@ -245,7 +233,7 @@ class NodeWechat {
     }
   }
   getFullName(member) {
-    return `${member.NickName}${member.RemarkName ? '(' + member.RemarkName + ')': ''}`
+    return `${member.NickName}${member.RemarkName ? '(' + member.RemarkName + ')' : ''}`
   }
   on(evt, cb) {
     emitter.on(evt, cb)
@@ -254,14 +242,6 @@ class NodeWechat {
   emit(evt, data) {
     emitter.emit(evt, data);
     return this;
-  }
-}
-const addEventListener = () => {
-  for (const operation in action) {
-    if (action.hasOwnProperty(operation)) {
-      const handler = action[operation];
-      emitter.on(operation, handler);
-    }
   }
 }
 module.exports = new NodeWechat()
