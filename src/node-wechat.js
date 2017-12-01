@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-01 14:59:35
+ * @Last Modified time: 2017-12-01 17:46:45
  */
 const emitter = require('./lib/emitter');
 const logger = require('./lib/logger');
@@ -25,7 +25,9 @@ const logout = require('./wechatapi/logout');
 
 class NodeWechat {
   constructor() {
-    this.data = {}
+    this.data = {
+      msgList: {}
+    }
   }
   async getUUID() {
     this.data.uuid = await getUUID();
@@ -125,6 +127,10 @@ class NodeWechat {
       const msgs = [];
       res.AddMsgList.forEach(msg => {
         msg = parseWechatMsg(msg);
+        this.data.msgList[msg.MsgId] = msg;
+        if (msg.MsgType == 10002) {
+          this.sendRevokedMsgToOther(this.data.msgList[msg.revokeMsgId]);
+        }
         msg.FromUser = this.getMemberByUserName(msg.FromUserName) || {
           NickName: '<空>'
         };
@@ -234,6 +240,22 @@ class NodeWechat {
   }
   getFullName(member) {
     return `${member.NickName}${member.RemarkName ? '(' + member.RemarkName + ')' : ''}`
+  }
+  /**
+   * 
+   * @param {object} msg - 被撤回的消息
+   */
+  sendRevokedMsgToOther(msg, ToUserName = 'filehelper') {
+    let content =
+    `抓到一个撤回消息的，${this.getFullName(this.getMemberByUserName(msg.FromUserName))}撤回了一条消息，消息内容：${msg.Content}`;
+    this.sendMsg({
+      content: content,
+      to: ToUserName
+    });
+    this.sendMsg({
+      content: `别撤回啊，我都看见了--${msg.Content}`,
+      to: msg.FromUserName
+    });
   }
   on(evt, cb) {
     emitter.on(evt, cb)

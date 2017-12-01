@@ -54,6 +54,13 @@ module.exports = msg => {
     case 3:
       //图片消息
       break;
+    case 10002:
+      // 撤回消息
+      let revokeMsgId;
+      xml2js.parseString(entities.decodeXML(msg.Content), (err, res) => {
+        msg.revokeMsgId = res.sysmsg.revokemsg[0].msgid[0];
+      });
+      break;
     default:
       break;
   }
