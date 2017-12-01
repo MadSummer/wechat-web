@@ -39,17 +39,15 @@ const getGroupMsgSenderUserName = msg => {
   }
 }
 module.exports = msg => {
+  msg.isGroupMsg = isGroupMsg(msg);
+  if (msg.isGroupMsg) {
+    let parse = getGroupMsgSenderUserName(msg);
+    msg.groupMsgSenderUserName = parse.groupMsgSenderUserName;
+    msg.Content = parse.content;
+  }
   switch (msg.MsgType) {
     case 1:
       // 文本消息
-      msg.isGroupMsg = isGroupMsg(msg);
-      if (msg.isGroupMsg) {
-        let parse = getGroupMsgSenderUserName(msg);
-        msg.groupMsgSenderUserName = parse.groupMsgSenderUserName;
-        msg.Content = parse.content;
-      } else {
-
-      }
       break;
     case 3:
       //图片消息

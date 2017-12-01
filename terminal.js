@@ -38,7 +38,6 @@ wechat
             : ''
           let msgDetails;
           if (msg.isGroupMsg) {
-            let groupNickName = msg.FromUser.UserName === wechat.data.User.UserName ? tn : fn;
             msgDetails = `群消息(${wechat.getFullName(msg.FromUser)}) : ${gs}${msg.Content}`;
           } else {
             msgDetails = `${wechat.getFullName(msg.FromUser)} to ${wechat.getFullName(msg.ToUser)} : ${msg.Content}`;
