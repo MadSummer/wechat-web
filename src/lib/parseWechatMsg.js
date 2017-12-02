@@ -20,6 +20,12 @@ const logger = require('./logger');
 9999      SYSNOTICE
 10000     系统消息
 10002     撤回消息`
+/**
+ * 
+ * 
+ * @param {NodeWechat.Msg} msg - 
+ * @returns 
+ */
 const isGroupMsg = msg => {
   return msg.FromUserName.startsWith('@@') || msg.ToUserName.startsWith('@@')
 }
@@ -39,10 +45,10 @@ const getGroupMsgSenderUserName = msg => {
   }
 }
 module.exports = msg => {
-  msg.isGroupMsg = isGroupMsg(msg);
-  if (msg.isGroupMsg) {
+  msg.IsGroupMsg = isGroupMsg(msg);
+  if (msg.IsGroupMsg) {
     let parse = getGroupMsgSenderUserName(msg);
-    msg.groupMsgSenderUserName = parse.groupMsgSenderUserName;
+    msg.GroupMsgSenderUserName = parse.groupMsgSenderUserName;
     msg.Content = parse.content;
   }
   switch (msg.MsgType) {
@@ -56,7 +62,8 @@ module.exports = msg => {
       // 撤回消息
       let revokeMsgId;
       xml2js.parseString(entities.decodeXML(msg.Content), (err, res) => {
-        msg.revokeMsgId = res.sysmsg.revokemsg[0].msgid[0];
+        if (err) return;
+        msg.RevokeMsgId = res.sysmsg.revokemsg[0].msgid[0];
       });
       break;
     default:

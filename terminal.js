@@ -114,7 +114,7 @@ const interactive = {
         const memberList = [];
         result.forEach(member => {
           memberList.push({
-            name: wechat.getFullName(member),
+            name: member.FullName,
             value: member
           });
         });
