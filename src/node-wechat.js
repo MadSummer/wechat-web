@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-02 17:51:10
+ * @Last Modified time: 2017-12-02 18:01:21
  */
 const emitter = require('./lib/emitter');
 const logger = require('./lib/logger');
@@ -26,7 +26,7 @@ const logout = require('./wechatapi/logout');
 class NodeWechat {
   constructor() {
     this.data = {
-      msgList: {},
+      MsgList: [],
       MemberList: []
     };
     this.Msg = Msg;
@@ -105,11 +105,12 @@ class NodeWechat {
     this.data.SyncKey = res.SyncKey;
     if (res.AddMsgList.length > 0) {
       const msgs = [];
-      res.AddMsgList.forEach(msg => {
-        msg = parseWechatMsg(msg);
-        this.data.MsgList[msg.MsgId] = msg;
+      res.AddMsgList.forEach(data => {
+        let msg = new this.Msg(data);
+        this.data.MsgList.push(msg);
+        // if is revoked message
         if (msg.MsgType == 10002) {
-          this.sendRevokedMsgToOther(this.data.MsgList[msg.RevokeMsgId]);
+          this.sendRevokedMsgToOther(msg.RevokeMsgId);
         }
         msg.FromUser = this.getMemberByUserName(msg.FromUserName) || {
           NickName: '<empty>'
@@ -129,7 +130,7 @@ class NodeWechat {
    * 
    * @param {Object} msg - message
    * @param {string} msg.content - message content
-   * @param {string | number} msg.to - reciver
+   * @param {string | number} msg.to - message to
    * @returns {PromiseLike}
    */
   async sendMsg(msg) {
@@ -211,7 +212,7 @@ class NodeWechat {
   }
   /**
    * 
-   * @param {object} msg - revoked msg
+   * @param {object | } msg - revoked msg
    */
   sendRevokedMsgToOther(msg, ToUserName = 'filehelper') {
     let content =
@@ -297,32 +298,23 @@ class Msg {
         //TODO:
       }
     }
-    module.exports = msg => {
-      msg.IsGroupMsg = isGroupMsg(msg);
-      if (msg.IsGroupMsg) {
-        let parse = getGroupMsgSenderUserName(msg);
-        msg.GroupMsgSenderUserName = parse.groupMsgSenderUserName;
-        msg.Content = parse.content;
-      }
-      switch (msg.MsgType) {
-        case 1:
-          // 文本消息
-          break;
-        case 3:
-          //图片消息
-          break;
-        case 10002:
-          // 撤回消息
-          let revokeMsgId;
-          xml2js.parseString(entities.decodeXML(msg.Content), (err, res) => {
-            if (err) return;
-            msg.RevokeMsgId = res.sysmsg.revokemsg[0].msgid[0];
-          });
-          break;
-        default:
-          break;
-      }
-      return msg;
+    switch (this.MsgType) {
+      case 1:
+        // text
+        break;
+      case 3:
+        //image
+        break;
+      case 10002:
+        // revoked
+        let revokedMsgId;
+        xml2js.parseString(entities.decodeXML(msg.Content), (err, res) => {
+          if (err) return;
+          msg.RevokeMsgId = res.sysmsg.revokemsg[0].msgid[0];
+        });
+        break;
+      default:
+        break;
     }
   }
   isGroupMsg() {
