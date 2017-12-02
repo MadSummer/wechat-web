@@ -148,10 +148,10 @@ const getSendMsgOpt = (param, msg) => {
       Msg: {
         Type: 1,
         ClientMsgId: id,
-        Content: msg.content,
-        FromUserName: msg.from,
+        Content: msg.Content,
+        FromUserName: msg.FromUserName,
         LocalID: id,
-        ToUserName: msg.to
+        ToUserName: msg.ToUserName
       },
       Sence: 0
     }

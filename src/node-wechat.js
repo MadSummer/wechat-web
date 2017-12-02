@@ -2,15 +2,13 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-02 18:01:21
+ * @Last Modified time: 2017-12-03 01:00:09
  */
 const emitter = require('./lib/emitter');
 const logger = require('./lib/logger');
 const QR = require('./lib/qr');
 const sleep = require('./lib/sleep');
-const xml2js = require('xml2js');
-const entities = require('entities');
-
+const xml2json = require('./lib/decodeXML2JSON');
 const getUUID = require('./wechatapi/getUUID');
 const getQR = require('./wechatapi/getQR');
 const scanQR = require('./wechatapi/scanQR');
@@ -24,6 +22,10 @@ const logout = require('./wechatapi/logout');
 
 
 class NodeWechat {
+  /**
+   * Creates an instance of NodeWechat.
+   * @memberof NodeWechat
+   */
   constructor() {
     this.data = {
       MsgList: [],
@@ -75,6 +77,8 @@ class NodeWechat {
   async getContact() {
     this.emit('contact.get.start');
     let memberList = await getContact(this.data);
+    // clear old data
+    this.data.MemberList = [];
     for (let i = 0; i < memberList.length; i++) {
       const member = memberList[i];
       this.data.MemberList.push(new this.Member(member));
@@ -106,20 +110,13 @@ class NodeWechat {
     if (res.AddMsgList.length > 0) {
       const msgs = [];
       res.AddMsgList.forEach(data => {
-        let msg = new this.Msg(data);
+        //wechat init msg,ignore
+        if (data.MsgType === 51) return;
+        let msg = new this.Msg(data, this);
         this.data.MsgList.push(msg);
         // if is revoked message
-        if (msg.MsgType == 10002) {
-          this.sendRevokedMsgToOther(msg.RevokeMsgId);
-        }
-        msg.FromUser = this.getMemberByUserName(msg.FromUserName) || {
-          NickName: '<empty>'
-        };
-        msg.ToUser = this.getMemberByUserName(msg.ToUserName) || {
-          NickName: '<empty>'
-        };
-        if (msg.isGroupMsg) {
-          msg.GroupMsgSenderUser = this.getMemberByUserName(msg.groupMsgSenderUserName);
+        if (msg.MsgType === 10002) {
+          this.sendRevokedMsgToOther(msg.RevokedMsg);
         }
         msgs.push(msg);
       });
@@ -129,27 +126,27 @@ class NodeWechat {
   /**
    * 
    * @param {Object} msg - message
-   * @param {string} msg.content - message content
-   * @param {string | number} msg.to - message to
+   * @param {string} msg.Content - message content
+   * @param {string | number} msg.ToUser - message to
    * @returns {PromiseLike}
    */
   async sendMsg(msg) {
-    if (!msg.content) return this.emit('error', {
+    if (!msg.Content) return this.emit('error', {
       type: 'send',
-      message: '不能发送空消息'
+      message: 'message content is empty'
     });
-    if (!msg.to) return this.emit('error', {
+    if (!msg.ToUserName) return this.emit('error', {
       type: 'send',
-      message: '没有指定接收者'
+      message: 'there is no reciver'
     });
-    if (Number.isInteger(+msg.to)) {
-      if (!this.data.MemberList[+msg.to]) return this.emit('error', {
+    if (Number.isInteger(+msg.ToUserName)) {
+      if (!this.data.MemberList[+msg.ToUserName]) return this.emit('error', {
         type: 'send',
-        message: `未查找到第${+msg.to}位联系人`
+        message: `can't find member at index:${msg.ToUserName}`
       });
-      msg.to = this.data.MemberList[+msg.to].UserName;
+      msg.ToUserName = this.data.MemberList[+msg.ToUserName].UserName;
     }
-    msg.from = this.data.User.UserName;
+    msg.FromUserName = this.data.User.UserName;
     let res = await sendMsg(this.data, msg);
     this.emit('send', msg);
   }
@@ -174,57 +171,73 @@ class NodeWechat {
       this.emit('error', error)
     }
   }
-  searchInContactList(param) {
+  /**
+   * 
+   * search member in MemberList 
+   * @param {object} param - search param
+   * @param {string} param.kw - keyword
+   * @returns {Array<Member>}
+   * @memberof NodeWechat
+   */
+  searchInMemberList(param) {
     let members = [];
-    let MemberList = this.data.MemberList;
-    let GroupMemberList = this.data.GroupMemberList;
-    function find(list, query) {
-      for (let i = 0; i < list.length; i++) {
-        const member = list[i];
-        if (member.RemarkName.indexOf(query) !== -1 || member.NickName.indexOf(query) !== -1) {
-          members.push(member);
-          continue;
-        }
+    let list = this.data.MemberList;
+    for (let i = 0; i < list.length; i++) {
+      const member = list[i];
+      if (member.RemarkName.indexOf(param.kw) !== -1 || member.NickName.indexOf(param.kw) !== -1) {
+        members.push(member);
       }
     }
-    find(MemberList, param.kw);
-    find(GroupMemberList, param.kw);
     return members;
   }
   getMemberByUserName(UserName) {
-    let list;
-    UserName.indexOf('@@') != -1 ?
-      list = this.data.GroupMemberList : list = this.data.MemberList;
+    let list = this.data.MemberList;
     for (let i = 0; i < list.length; i++) {
       const member = list[i];
       if (member.UserName === UserName) {
-        return new this.Member(member);
+        return member;
       }
-      if (member.MemberList && UserName.indexOf('@@') == -1) {
-        for (let j = 0; j < member.MemberList.length; j++) {
-          const memberInGroup = member.MemberList[j];
-          if (memberInGroup.UserName === UserName) {
-            return new Member(memberInGroup);
-          }
+    }
+    // if not found,find in group
+    for (let i = 0; i < list.length; i++) {
+      const member = list[i];
+      if (member.UserName.indexOf('@@') === -1) continue;
+      for (let j = 0; j < member.MemberList.length; j++) {
+        const memberInGroup = member.MemberList[j];
+        if (memberInGroup.UserName === UserName) {
+          memberInGroup.Group = member;
+          return new this.Member(memberInGroup);
         }
       }
+    }
+    // if still not found,try get batch contact
+    //TODO:
+  }
+  /**
+   * 
+   * get message by MsgId from locale message list
+   * @param {string} MsgId 
+   * @returns {Msg}
+   * @memberof NodeWechat
+   */
+  getMsgByMsgId(MsgId) {
+    for (let i = 0; i < this.data.MsgList.length; i++) {
+      const msg = this.data.MsgList[i];
+      if (msg.MsgId === MsgId) return msg;
     }
   }
   /**
    * 
-   * @param {object | } msg - revoked msg
+   * @param {Msg} msg - revoked msg
+   * @param {string} ToUserName - sent to whom
    */
   sendRevokedMsgToOther(msg, ToUserName = 'filehelper') {
-    let content =
-      `抓到一个撤回消息的，${this.getMemberByUserName(msg.FromUserName).FullName}撤回了一条消息，消息内容：${msg.Content}`;
+    let Content =
+      `抓到一个撤回消息的，${msg.FromUser.getFullName()}撤回了一条消息，消息内容：${msg.Content}`;
     this.sendMsg({
-      content: content,
-      to: ToUserName
+      Content,
+      ToUserName
     });
-    /* this.sendMsg({
-      content: `别撤回啊，我都看见了--${msg.Content}`,
-      to: msg.FromUserName
-    }); */
   }
   on(evt, cb) {
     emitter.on(evt, cb)
@@ -248,7 +261,7 @@ class Member {
     }
   }
   getFullName() {
-    return `${this.NickName}${this.RemarkName ? '(' + this.RemarkName + ')' : ''}`
+    return this.RemarkName || this.DisplayName || this.NickName;
   }
   isGroup() {
     return this.UserName.indexOf('@@') !== -1;
@@ -257,20 +270,28 @@ class Member {
 }
 
 class Msg {
-  constructor(obj) {
-
+  /**
+   * Creates an instance of Msg.
+   * @param {object} obj 
+   * @param {NodeWechat} wechat 
+   * @memberof Msg
+   */
+  constructor(obj, wechat) {
+    this.wechat = wechat;
+    this.__init(obj);
+    this.parse();
   }
-  __init(obj) {
+
+  __init(obj, wechat) {
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         const element = obj[key];
         this[key] = element;
       }
     }
-    this.parse();
   }
   parse() {
-    `MsgType   说明
+    `MsgType    说明
       1         文本消息
       3         图片消息
       34        语音消息
@@ -289,15 +310,24 @@ class Msg {
       9999      SYSNOTICE
       10000     系统消息
       10002     撤回消息`
+    this.FromUser = this.wechat.getMemberByUserName(this.FromUserName) || {
+      NickName: '<empty>'
+    };
+    this.ToUser = this.wechat.getMemberByUserName(this.ToUserName) || {
+      NickName: '<empty>'
+    };
     if (this.isGroupMsg()) {
-      // If the sender of the message is self,there is no `:<br/>`
-      if (this.Content.indexOf(':<br/>') !== -1) {
+      // If the sender of the message is self,there is no `:<br/>` in msg.Content
+      if (this.Content.indexOf(':<br/>') !== -1 && this.Content.startsWith('@')) {
+        this.FromGroup = this.FromUser;
         this.Content = this.Content.split(':<br/>')[1];
-        this.RealFromUserName = this.Content.split(':<br/>')[0];
+        this.FromUser = this.wechat.getMemberByUserName(this.Content.split(':<br/>')[0]);
       } else {
-        //TODO:
+        // the sender of the message is self
+        this.FromGroup = this.ToUser;
       }
     }
+    let json;
     switch (this.MsgType) {
       case 1:
         // text
@@ -305,13 +335,26 @@ class Msg {
       case 3:
         //image
         break;
+      case 49:
+        json= xml2json(this.Content);
+        let msg;
+        if (json) {
+          msg = json.msg;
+          this.Content = {
+            appname: msg.appinfo.appname,
+            desc: msg.appmsg.des,
+            title: msg.appmsg.title,
+            url:msg.appmsg.url
+          }
+        }
+        break;
       case 10002:
         // revoked
-        let revokedMsgId;
-        xml2js.parseString(entities.decodeXML(msg.Content), (err, res) => {
-          if (err) return;
-          msg.RevokeMsgId = res.sysmsg.revokemsg[0].msgid[0];
-        });
+        json = xml2json(this.Content);
+        if (json) {
+          let revokedMsgId = json.sysmsg.revokemsg.msgid;
+          this.RevokedMsg = this.wechat.getMsgByMsgId(revokedMsgId);
+        }
         break;
       default:
         break;
@@ -321,4 +364,7 @@ class Msg {
     return this.FromUserName.startsWith('@@') || this.ToUserName.startsWith('@@')
   }
 }
+/**
+ * @module NodeWechat
+ */
 module.exports = new NodeWechat()

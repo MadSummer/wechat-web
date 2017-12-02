@@ -2,8 +2,8 @@ const getLoginOpt = require('../lib/getAPIRequestOption').getLoginOpt;
 const logger = require('../lib/logger');
 const rp = require('../lib/rp');
 
-module.exports = async (uuid, tip) => await
-  rp(getLoginOpt(uuid, tip))
+module.exports = (uuid, tip) => {
+  return rp(getLoginOpt(uuid, tip))
     .then(res => {
       let window = {}
       if (res) {
@@ -11,7 +11,4 @@ module.exports = async (uuid, tip) => await
       }
       return window;
     })
-    .catch(err => {
-      logger.error(err);
-    })
-
+}

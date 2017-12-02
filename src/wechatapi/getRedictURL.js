@@ -1,22 +1,20 @@
 const getRedicetURLOpt = require('../lib/getAPIRequestOption').getRedicetURLOpt;
 const rp = require('../lib/rp');
-const xml2js = require('xml2js');
-module.exports = async redirect_uri => {
-  let res = await rp(getRedicetURLOpt(redirect_uri));
-  let info = await new Promise((onFullfilled, onRejected) => {
-    xml2js.parseString(res, (err, result) => {
-      if (err) onFullfilled();
-      let info = result.error;
-      onFullfilled({
-        ret: info.ret[0],
-        message: info.message[0],
-        skey: info.skey[0],
-        sid: info.wxsid[0],
-        uin: info.wxuin[0],
-        pass_ticket: info.pass_ticket[0],
-        isgrarscale: info.isgrayscale[0]
-      });
-    });
-  });
-  return info;
+const xml2json = require('../lib/decodeXML2JSON');
+module.exports = redirect_uri => {
+  return rp(getRedicetURLOpt(redirect_uri))
+    .then(res => {
+      let info = xml2json(res);
+      if (!info) return;
+      info = info.error;
+      return {
+        ret: info.ret,
+        message: info.message,
+        skey: info.skey,
+        sid: info.wxsid,
+        uin: info.wxuin,
+        pass_ticket: info.pass_ticket,
+        isgrarscale: info.isgrayscale
+      }
+    })
 }

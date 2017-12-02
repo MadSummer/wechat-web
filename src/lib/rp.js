@@ -1,5 +1,6 @@
 // need cookie
 const rp = require('request-promise').defaults({
-  jar: true
+  jar: true,
+  simple:true
 });
 module.exports = rp;

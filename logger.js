@@ -6,7 +6,7 @@ const conf = {
       filename: 'log.log'
     },
     log: {
-      type: 'stdout'
+      type: 'console'
     },
     chat: {
       type: 'file',

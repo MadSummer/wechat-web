@@ -29,27 +29,28 @@ wechat
   })
   .on('message', data => {
     data.forEach(msg => {
+      let msgDetails;
+      if (msg.isGroupMsg()) {
+        msgDetails = `群消息(${msg.FromGroup.getFullName()}) : ${msg.FromUser.getFullName()} : `
+      } else {
+        msgDetails = `${msg.FromUser.getFullName()} to ${msg.ToUser.getFullName()} : `;
+      }
       switch (msg.MsgType) {
         case 1:
-          let gs = msg.isGroupMsg ?
-            (msg.GroupMsgSenderUser.RemarkName
-              || msg.GroupMsgSenderUser.DisplayName
-              || msg.GroupMsgSenderUser.NickName) + ':'
-            : ''
-          let msgDetails;
-          if (msg.isGroupMsg) {
-            msgDetails = `群消息(${wechat.getFullName(msg.FromUser)}) : ${gs}${msg.Content}`;
-          } else {
-            msgDetails = `${wechat.getFullName(msg.FromUser)} to ${wechat.getFullName(msg.ToUser)} : ${msg.Content}`;
-          }
-          logger.debug(msgDetails);
+          msgDetails += `${msg.Content}`;
           break;
         case 3:
           //logger.debug(`${msg.FromUser.NickName} to ${msg.ToUser.NickName}:${msg.Content}`)
           break;
+        case 49:
+          msgDetails += `分享链接：\n标题：${msg.Content.title}\n`;
+          msgDetails += `描述：${msg.Content.desc}\n地址：${msg.Content.url}\n`;
+          msgDetails += `应用名称：${msg.Content.appname}`;
+          break;
         default:
           break;
       }
+      logger.debug(msgDetails);
     });
   })
   .on('send', data => {
@@ -69,8 +70,7 @@ const interactive = {
       name: 'action',
       message: '请选择操作',
       prefix: '--',
-      choices: [
-        {
+      choices: [{
           name: '查找联系人',
           value: 'search'
         },
@@ -95,14 +95,12 @@ const interactive = {
     });
   },
   searchContact: () => {
-    const qus = [
-      {
-        type: 'input',
-        name: 'kw',
-        message: '请输入关键字(昵称或者备注):',
-        validate: str => str.trim() === '' ? '输入不能为空' : true
-      }
-    ]
+    const qus = [{
+      type: 'input',
+      name: 'kw',
+      message: '请输入关键字(昵称或者备注):',
+      validate: str => str.trim() === '' ? '输入不能为空' : true
+    }]
     inquirer.prompt(qus).then(answer => {
       let result = wechat.searchContact({
         kw: answer.kw
@@ -147,8 +145,7 @@ const interactive = {
       name: 'memberAction',
       message: '请选择操作',
       suffix: '输入数字进入操作：',
-      choices: [
-        {
+      choices: [{
           name: '发送消息',
           value: 1
         },
@@ -198,8 +195,7 @@ const interactive = {
 
   },
   sendMsg: member => {
-    const qus = [
-      {
+    const qus = [{
         type: 'input',
         name: 'content',
         message: '请输入消息内容：'
@@ -237,8 +233,3 @@ const interactive = {
     });
   }
 }
-
-
-
-
-
