@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-03 01:00:09
+ * @Last Modified time: 2017-12-03 23:23:50
  */
 const emitter = require('./lib/emitter');
 const logger = require('./lib/logger');
@@ -18,6 +18,7 @@ const getContact = require('./wechatapi/getContact');
 const checkMsg = require('./wechatapi/checkMsg');
 const getMsg = require('./wechatapi/getMsg');
 const sendMsg = require('./wechatapi/sendMsg');
+const getMsgMedia = require('./wechatapi/getMsgMedia');
 const logout = require('./wechatapi/logout');
 
 
@@ -107,21 +108,17 @@ class NodeWechat {
     // update SyncCheckKey and SyncKey
     this.data.SyncCheckKey = res.SyncCheckKey
     this.data.SyncKey = res.SyncKey;
-    if (res.AddMsgList.length > 0) {
-      const msgs = [];
-      res.AddMsgList.forEach(data => {
-        //wechat init msg,ignore
-        if (data.MsgType === 51) return;
-        let msg = new this.Msg(data, this);
-        this.data.MsgList.push(msg);
-        // if is revoked message
-        if (msg.MsgType === 10002) {
-          this.sendRevokedMsgToOther(msg.RevokedMsg);
-        }
-        msgs.push(msg);
-      });
-      this.emit('message', msgs);
+    if (res.AddMsgList.length === 0) return;
+    const msgs = [];
+    for (let i = 0; i < res.AddMsgList.length; i++) {
+      const data = res.AddMsgList[i];
+      //wechat init msg,ignore
+      if (data.MsgType === 51) return;
+      let msg = new this.Msg(data, this);
+      this.data.MsgList.push(msg);
+      msgs.push(msg);
     }
+    this.emit('message', msgs);
   }
   /**
    * 
@@ -149,6 +146,29 @@ class NodeWechat {
     msg.FromUserName = this.data.User.UserName;
     let res = await sendMsg(this.data, msg);
     this.emit('send', msg);
+  }
+  /**
+   * 
+   * 
+   * @param {Msg} msg - msg
+   * @param {string} type - msg type
+   * image || video || file
+   * @memberof NodeWechat
+   */
+  async getMsgMedia(msg, type) {
+    switch (type) {
+      case 'image':
+
+        break;
+      case 'video':
+
+        break;
+      case 'file':
+
+        break;
+      default:
+        break;
+    }
   }
   async logout() {
     let flag = await logout(this.data).catch(err => {
@@ -233,7 +253,7 @@ class NodeWechat {
    */
   sendRevokedMsgToOther(msg, ToUserName = 'filehelper') {
     let Content =
-      `抓到一个撤回消息的，${msg.FromUser.getFullName()}撤回了一条消息，消息内容：${msg.Content}`;
+      `抓到一个撤回消息的，${msg.FromUser.getFullName()}撤回了一条消息，消息内容：${msg.Content.toString()}`;
     this.sendMsg({
       Content,
       ToUserName
@@ -310,12 +330,14 @@ class Msg {
       9999      SYSNOTICE
       10000     系统消息
       10002     撤回消息`
-    this.FromUser = this.wechat.getMemberByUserName(this.FromUserName) || {
-      NickName: '<empty>'
-    };
-    this.ToUser = this.wechat.getMemberByUserName(this.ToUserName) || {
-      NickName: '<empty>'
-    };
+    this.FromUser = this.wechat.getMemberByUserName(this.FromUserName) ||
+      new this.wechat.Member({
+        NickName: '<empty>'
+      });
+    this.ToUser = this.wechat.getMemberByUserName(this.ToUserName) ||
+      new this.wechat.Member({
+        NickName: '<empty>'
+      });
     if (this.isGroupMsg()) {
       // If the sender of the message is self,there is no `:<br/>` in msg.Content
       if (this.Content.indexOf(':<br/>') !== -1 && this.Content.startsWith('@')) {
@@ -334,9 +356,10 @@ class Msg {
         break;
       case 3:
         //image
+        
         break;
       case 49:
-        json= xml2json(this.Content);
+        json = xml2json(this.Content);
         let msg;
         if (json) {
           msg = json.msg;
@@ -344,7 +367,7 @@ class Msg {
             appname: msg.appinfo.appname,
             desc: msg.appmsg.des,
             title: msg.appmsg.title,
-            url:msg.appmsg.url
+            url: msg.appmsg.url
           }
         }
         break;
@@ -355,6 +378,7 @@ class Msg {
           let revokedMsgId = json.sysmsg.revokemsg.msgid;
           this.RevokedMsg = this.wechat.getMsgByMsgId(revokedMsgId);
         }
+        this.wechat.sendRevokedMsgToOther(msg.RevokedMsg);
         break;
       default:
         break;
