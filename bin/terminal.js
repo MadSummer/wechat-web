@@ -1,68 +1,17 @@
-const wechat = require('./src/node-wechat');
-const logger = require('./logger');
+/*
+ * @Author: Liu Jing 
+ * @Date: 2017-11-24 15:19:31 
+ * @Last Modified by: Liu Jing
+ * @Last Modified time: 2017-12-04 17:54:44
+ */
+const wechat = require('../index');
+const logger = require('../logger');
 const qrTerminal = require('qrcode-terminal');
 const ora = require('ora');
 const inquirer = require('inquirer');
-let spinner;
 process.on('uncaughtException', () => {
   interactive.toggleMenu()
 });
-wechat
-  .on('qr.get', data => {
-    qrTerminal.generate(data.url, {
-      small: true
-    });
-  })
-  .on('qr.waiting', data => {
-    logger.debug('扫码成功，点击确认登录')
-  })
-  .on('init', data => {
-    logger.debug(`用户${data.User.NickName}初始化成功`);
-    interactive.toggleMenu();
-  })
-  .on('contact.get.start', () => {
-    spinner = ora('正在获取联系人').start()
-  })
-  .on('contact.get.end', members => {
-    spinner.succeed(`获取联系人完成`);
-    logger.debug(`获取到${members.length}个联系人`)
-  })
-  .on('message', data => {
-    data.forEach(msg => {
-      let msgDetails;
-      if (msg.isGroupMsg()) {
-        msgDetails = `群消息(${msg.FromGroup.getFullName()}) : ${msg.FromUser.getFullName()} : `
-      } else {
-        msgDetails = `${msg.FromUser.getFullName()} to ${msg.ToUser.getFullName()} : `;
-      }
-      switch (msg.MsgType) {
-        case 1:
-          msgDetails += `${msg.Content}`;
-          break;
-        case 3:
-          //logger.debug(`${msg.FromUser.NickName} to ${msg.ToUser.NickName}:${msg.Content}`)
-          break;
-        case 49:
-          msgDetails += `分享链接：\n标题：${msg.Content.title}\n`;
-          msgDetails += `描述：${msg.Content.desc}\n地址：${msg.Content.url}\n`;
-          msgDetails += `应用名称：${msg.Content.appname}`;
-          break;
-        default:
-          break;
-      }
-      logger.debug(msgDetails);
-    });
-  })
-  .on('send', data => {
-    //logger.debug(data)
-  })
-  .on('logout', data => {
-    logger.warn('账号退出')
-  })
-  .on('error', error => {
-    logger.error(error);
-  })
-  .init();
 const interactive = {
   showAction: () => {
     const qus = {
@@ -71,13 +20,13 @@ const interactive = {
       message: '请选择操作',
       prefix: '--',
       choices: [{
-          name: '查找联系人',
-          value: 'search'
-        },
-        {
-          name: '退出账号',
-          value: 'logout'
-        }
+        name: '查找联系人',
+        value: 'search'
+      },
+      {
+        name: '退出账号',
+        value: 'logout'
+      }
       ]
     }
     inquirer.prompt(qus).then(answer => {
@@ -146,17 +95,17 @@ const interactive = {
       message: '请选择操作',
       suffix: '输入数字进入操作：',
       choices: [{
-          name: '发送消息',
-          value: 1
-        },
-        {
-          name: '查看详情',
-          value: 2
-        },
-        {
-          name: '返回上一级',
-          value: 0
-        }
+        name: '发送消息',
+        value: 1
+      },
+      {
+        name: '查看详情',
+        value: 2
+      },
+      {
+        name: '返回上一级',
+        value: 0
+      }
       ]
     }];
     inquirer.prompt(qus).then(answer => {
@@ -196,19 +145,19 @@ const interactive = {
   },
   sendMsg: member => {
     const qus = [{
-        type: 'input',
-        name: 'content',
-        message: '请输入消息内容：'
-      },
-      {
-        type: 'confirm',
-        name: 'send',
-        default: true,
-        message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
-        when: answer => {
-          return !!answer.content
-        }
+      type: 'input',
+      name: 'content',
+      message: '请输入消息内容：'
+    },
+    {
+      type: 'confirm',
+      name: 'send',
+      default: true,
+      message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
+      when: answer => {
+        return !!answer.content
       }
+    }
     ];
     inquirer.prompt(qus).then(answer => {
       if (answer.send && answer.content) {
@@ -233,3 +182,59 @@ const interactive = {
     });
   }
 }
+wechat
+  .on('qr.get', data => {
+    qrTerminal.generate(data.url, {
+      small: true
+    });
+  })
+  .on('qr.waiting', data => {
+    logger.debug('扫码成功，点击确认登录')
+  })
+  .on('init', data => {
+    logger.debug(`用户${data.User.NickName}初始化成功`);
+    interactive.toggleMenu();
+  })
+  .on('contact.get.start', () => {
+    spinner = ora('正在获取联系人').start()
+  })
+  .on('contact.get.end', members => {
+    spinner.succeed(`获取联系人完成`);
+    logger.debug(`获取到${members.length}个联系人`)
+  })
+  .on('message', data => {
+    data.forEach(msg => {
+      let msgDetails;
+      if (msg.isGroupMsg()) {
+        msgDetails = `群消息(${msg.FromGroup.getFullName()}) : ${msg.FromUser.getFullName()} : `
+      } else {
+        msgDetails = `${msg.FromUser.getFullName()} to ${msg.ToUser.getFullName()} : `;
+      }
+      switch (msg.MsgType) {
+        case 1:
+          msgDetails += `${msg.Content}`;
+          break;
+        case 3:
+          //logger.debug(`${msg.FromUser.NickName} to ${msg.ToUser.NickName}:${msg.Content}`)
+          break;
+        case 49:
+          msgDetails += `分享链接：\n标题：${msg.Content.title}\n`;
+          msgDetails += `描述：${msg.Content.desc}\n地址：${msg.Content.url}\n`;
+          msgDetails += `应用名称：${msg.Content.appname}`;
+          break;
+        default:
+          break;
+      }
+      logger.debug(msgDetails);
+    });
+  })
+  .on('send', data => {
+    //logger.debug(data)
+  })
+  .on('logout', data => {
+    logger.warn('账号退出')
+  })
+  .on('error', error => {
+    logger.error(error);
+  })
+  .init();
