@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-03 23:23:50
+ * @Last Modified time: 2017-12-04 14:06:46
  */
 const emitter = require('./lib/emitter');
 const logger = require('./lib/logger');
@@ -12,15 +12,13 @@ const xml2json = require('./lib/decodeXML2JSON');
 const getUUID = require('./wechatapi/getUUID');
 const getQR = require('./wechatapi/getQR');
 const scanQR = require('./wechatapi/scanQR');
-const getRedictURL = require('./wechatapi/getRedictURL');
-const initWebWX = require('./wechatapi/initWebWX');
+const login = require('./wechatapi/login');
 const getContact = require('./wechatapi/getContact');
 const checkMsg = require('./wechatapi/checkMsg');
 const getMsg = require('./wechatapi/getMsg');
 const sendMsg = require('./wechatapi/sendMsg');
 const getMsgMedia = require('./wechatapi/getMsgMedia');
 const logout = require('./wechatapi/logout');
-
 
 class NodeWechat {
   /**
@@ -59,16 +57,11 @@ class NodeWechat {
     }
     if (res.code == 408) throw new Error('qrcode scan result error');
   }
-  async getRedictURL() {
-    let info = await getRedictURL(this.data.redirect_uri);
-    if (!info) throw new Error(`request ${this.data.redirect_uri} error`);
+  async login() {
+    let info = await login(this.data.redirect_uri);
+    if (!info) throw new Error(`login error`);
     Object.assign(this.data, info);
-  }
-  async initWebWX() {
-    let initData = await initWebWX(this.data);
-    if (!initData) throw new Error(`get user info error`);
-    Object.assign(this.data, initData);
-    this.emit('info', initData.User);
+    this.emit('login', info.User);
   }
   /**
    * get member and group
@@ -181,8 +174,7 @@ class NodeWechat {
       await this.getUUID();
       this.showQR();
       await this.scanQR()
-      await this.getRedictURL();
-      await this.initWebWX();
+      await this.login();
       await this.getContact();
       this.emit('init', this.data);
       await this.getMsg();
@@ -356,7 +348,7 @@ class Msg {
         break;
       case 3:
         //image
-        
+
         break;
       case 49:
         json = xml2json(this.Content);

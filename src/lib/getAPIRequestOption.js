@@ -16,7 +16,7 @@ module.exports = {
       uri: 'https://login.weixin.qq.com/l/' + uuid,
     }
   },
-  getLogin: (uuid, tip) => {
+  getLoginOpt: (uuid, tip) => {
     return {
       uri: 'https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login',
       qs: {
@@ -27,12 +27,12 @@ module.exports = {
       }
     }
   },
-  getRedicetURL: redirect_uri => {
+  getRedicetURLOpt: redirect_uri => {
     return {
       uri: redirect_uri + '&fun=new&version=2'
     }
   },
-  getInitWebWX: param => {
+  getInitWebWXOpt: param => {
     return {
       method: 'POST',
       uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=659125059&lang=zh_CN&pass_ticket=T23jnPGrJlqNIIVszEz1VG9h1d%252B9YbrnxXTleoqaEIA%253D',
@@ -54,7 +54,7 @@ module.exports = {
       },
     };
   },
-  getContact: param => {
+  getContactOpt: param => {
     let r = +new Date();
     return {
       uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact',
@@ -67,7 +67,7 @@ module.exports = {
       }
     }
   },
-  getGroup: (param, list) => {
+  getGroupOpt: (param, list) => {
     let r =+new Date()
     return {
       method: 'POST',
@@ -89,7 +89,7 @@ module.exports = {
       }
     }
   },
-  getCheckMsg: param => {
+  getCheckMsgOpt: param => {
     let synckey = [];
     param.SyncCheckKey.List.forEach(list => {
       let key = list.Key;
@@ -108,7 +108,7 @@ module.exports = {
       }
     }
   },
-  getMsg: param => {
+  getMsgOpt: param => {
     return {
       method: 'POST',
       uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync',
@@ -163,7 +163,7 @@ module.exports = {
       }
     }
   },
-  getSendMsg: (param, msg) => {
+  getSendMsgOpt: (param, msg) => {
     let now = +new Date();
     let id = now + 6546;
     return {
@@ -192,7 +192,7 @@ module.exports = {
       }
     }
   },
-  getRevokeMsg: (param) => {
+  getRevokeMsgOpt: (param) => {
     return {
       method: 'POST',
       uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxrevokemsg',
@@ -213,7 +213,7 @@ module.exports = {
       }
     }
   },
-  getLogout: param => {
+  getLogoutOpt: param => {
     return {
       method: 'POST',
       uri: 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxlogout',

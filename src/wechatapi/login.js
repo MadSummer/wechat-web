@@ -1,3 +1,6 @@
+const getUUIDOpt = require('../lib/getAPIRequestOption').getUUIDOpt;
+const getInitWebWXOpt = require('../lib/getAPIRequestOption').getInitWebWXOpt;
+const logger = require('../lib/logger');
 const getRedicetURLOpt = require('../lib/getAPIRequestOption').getRedicetURLOpt;
 const rp = require('../lib/rp');
 const xml2json = require('../lib/decodeXML2JSON');
@@ -16,5 +19,14 @@ module.exports = redirect_uri => {
         pass_ticket: info.pass_ticket,
         isgrarscale: info.isgrayscale
       }
+    }).then(info => {
+      if (!info) return;
+      return rp(getInitWebWXOpt(info)).then(res => {
+        Object.assign(info, res);
+        return info;
+      });
     })
 }
+
+
+
