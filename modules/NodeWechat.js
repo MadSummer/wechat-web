@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-05 19:50:38
+ * @Last Modified time: 2017-12-05 20:40:16
  */
 const events = require('events');
 const logger = require('../lib/logger');
@@ -32,33 +32,9 @@ class NodeWechat {
     this.Message = Message;
     this.Member = Member;
   }
-  async getQRcode() {
-    let res = await requestWechatApi.getQRcode();
-    this.data.uuid = res.uuid;
-    let QRcode = QR.imageSync(res.uri, {
-      type: 'png'
-    });
-    this.emit('qr.get', {
-      QRcode: QRcode,
-      url: res.uri
-    });
-  }
-  async QRcodeScanResult() {
-    let res = await requestWechatApi.QRcodeScanResult(this.data.uuid);
-    if (!res) res = {}
-    if (res.code == 201) {
-      this.emit('qr.waiting', res);
-      await sleep(1000);
-      await this.QRcodeScanResult();
-    }
-    if (res.code == 200) {
-      this.data.redirect_uri = res.redirect_uri;
-    }
-    if (res.code == 408) throw new Error('qrcode scan result error');
-  }
   async login() {
-    //let info = await requestWechatApi.login(this.data.redirect_uri);
     let res = await requestWechatApi.login(arguments[0]);
+    if (!res) throw new Error(`login error`);
     if (res.step === 'qr') {
       this.emit('qr.get', {
         QRcode: QR.imageSync(res.uri, {
@@ -74,8 +50,8 @@ class NodeWechat {
       await this.login(res);
     }
     if (res.step === 'success') {
-      Object.assign(this.data, info);
-      this.emit('login', info.User);
+      Object.assign(this.data, res.info);
+      this.emit('login', res.info.User);
     }
   }
   /**
@@ -186,8 +162,8 @@ class NodeWechat {
   }
   async init() {
     try {
-      await this.getQRcode();
-      await this.QRcodeScanResult();
+      /* await this.getQRcode();
+      await this.QRcodeScanResult(); */
       await this.login();
       await this.getContact();
       this.emit('init', this.data);
