@@ -2,15 +2,22 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-04 18:19:42
+ * @Last Modified time: 2017-12-05 09:36:57
  */
-const emitter = require('../lib/emitter');
+const events = require('events');
 const logger = require('../lib/logger');
-const QR = require('../lib/qr');
+const QR = require('qr-image');
 const sleep = require('../lib/sleep');
 const requestWechatApi = require('../lib/requestWechatApi');
 const Message = require('./Message');
 const Member = require('./Member');
+
+const emitter = new events.EventEmitter();
+const sleep = delay => new Promise((onFullfilled, onRejected) => {
+  setTimeout(() => {
+    onFullfilled()
+  }, delay);
+})
 class NodeWechat {
   /**
    * Creates an instance of NodeWechat.
@@ -28,9 +35,11 @@ class NodeWechat {
   async getQRcode() {
     let res = await requestWechatApi.getQRcode();
     this.data.uuid = res.uuid;
-    let qr = QR(res.uri);
+    let QRcode = QR.imageSync(res.uri, {
+      type: 'png'
+    });
     this.emit('qr.get', {
-      qr: qr,
+      QRcode: QRcode,
       url: res.uri
     });
   }
