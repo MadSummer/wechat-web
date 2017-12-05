@@ -20,13 +20,13 @@ const interactive = {
       message: '请选择操作',
       prefix: '--',
       choices: [{
-        name: '查找联系人',
-        value: 'search'
-      },
-      {
-        name: '退出账号',
-        value: 'logout'
-      }
+          name: '查找联系人',
+          value: 'search'
+        },
+        {
+          name: '退出账号',
+          value: 'logout'
+        }
       ]
     }
     inquirer.prompt(qus).then(answer => {
@@ -95,17 +95,17 @@ const interactive = {
       message: '请选择操作',
       suffix: '输入数字进入操作：',
       choices: [{
-        name: '发送消息',
-        value: 1
-      },
-      {
-        name: '查看详情',
-        value: 2
-      },
-      {
-        name: '返回上一级',
-        value: 0
-      }
+          name: '发送消息',
+          value: 1
+        },
+        {
+          name: '查看详情',
+          value: 2
+        },
+        {
+          name: '返回上一级',
+          value: 0
+        }
       ]
     }];
     inquirer.prompt(qus).then(answer => {
@@ -145,19 +145,19 @@ const interactive = {
   },
   sendMsg: member => {
     const qus = [{
-      type: 'input',
-      name: 'content',
-      message: '请输入消息内容：'
-    },
-    {
-      type: 'confirm',
-      name: 'send',
-      default: true,
-      message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
-      when: answer => {
-        return !!answer.content
+        type: 'input',
+        name: 'content',
+        message: '请输入消息内容：'
+      },
+      {
+        type: 'confirm',
+        name: 'send',
+        default: true,
+        message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
+        when: answer => {
+          return !!answer.content
+        }
       }
-    }
     ];
     inquirer.prompt(qus).then(answer => {
       if (answer.send && answer.content) {

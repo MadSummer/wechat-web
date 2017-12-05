@@ -1,13 +1,17 @@
 {
+  "compilerOptions": {
+    "target": "es6",
+    "module": "es6"
+  },
   "typeAcquisition": {
     "include": [
-      
+      "jquery"
     ]
   },
   "exclude": [
     "node_modules"
   ],
   "include": [
-    "./app"
+    "./"
   ]
 }
