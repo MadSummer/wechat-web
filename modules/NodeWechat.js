@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-05 20:40:16
+ * @Last Modified time: 2017-12-05 23:07:05
  */
 const events = require('events');
 const logger = require('../lib/logger');
@@ -35,6 +35,7 @@ class NodeWechat {
   async login() {
     let res = await requestWechatApi.login(arguments[0]);
     if (!res) throw new Error(`login error`);
+    // get qrcode
     if (res.step === 'qr') {
       this.emit('qr.get', {
         QRcode: QR.imageSync(res.uri, {
@@ -44,14 +45,16 @@ class NodeWechat {
       });
       await this.login(res);
     }
+    // waiting confirm login
     if (res.step === 'waiting') {
       this.emit('qr.waiting');
       await sleep(1000);
       await this.login(res);
     }
+    // login success
     if (res.step === 'success') {
-      Object.assign(this.data, res.info);
-      this.emit('login', res.info.User);
+      Object.assign(this.data, res);
+      this.emit('login', res.User);
     }
   }
   /**
