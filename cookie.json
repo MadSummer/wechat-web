@@ -1,0 +1,90 @@
+{
+  "wx.qq.com": {
+    "/": {
+      "wxuin": {
+        "key": "wxuin",
+        "value": "178051200",
+        "expires": "2017-12-08T07:52:13.000Z",
+        "domain": "wx.qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:09.870Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      },
+      "wxsid": {
+        "key": "wxsid",
+        "value": "409T3xniunR4EoLS",
+        "expires": "2017-12-05T19:52:13.000Z",
+        "domain": "wx.qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:09.871Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      },
+      "wxloadtime": {
+        "key": "wxloadtime",
+        "value": "1512460147_expired",
+        "expires": "2017-12-05T19:49:18.000Z",
+        "domain": "wx.qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:09.871Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      },
+      "mm_lang": {
+        "key": "mm_lang",
+        "value": "zh_CN",
+        "expires": "2017-12-05T19:49:07.000Z",
+        "domain": "wx.qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:09.871Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      },
+      "webwxuvid": {
+        "key": "webwxuvid",
+        "value": "3f90b71608b427cafb9cbb679039298233a6a16fa7ee089ecf0439a4a3afcc547e177d91bfe91522a57154760b245b60",
+        "expires": "2027-12-03T07:49:07.000Z",
+        "domain": "wx.qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:09.872Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      },
+      "webwx_auth_ticket": {
+        "key": "webwx_auth_ticket",
+        "value": "CIsBELisxPUFGoABuT5C32rbVQ92pTW3FWy1EznCWstkTwEGbzwQClH9MvlyzelYLopNY/kFFaNvy6tmvpwlBoHtWsjeEg2wBYegjoNrn0mIiuLyMPXhoRwxhfP3mCVWTa63nSVFSmwE8unmYHrqYcIYotcnbqa09vE8CIhxfwOYDmreSLLNhUxI0wc=",
+        "expires": "2027-12-03T07:49:07.000Z",
+        "domain": "wx.qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:09.872Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      },
+      "wxpluginkey": {
+        "key": "wxpluginkey",
+        "value": "1512435002",
+        "expires": "2017-12-05T19:52:13.000Z",
+        "domain": "wx.qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:20.468Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      }
+    }
+  },
+  "qq.com": {
+    "/": {
+      "webwx_data_ticket": {
+        "key": "webwx_data_ticket",
+        "value": "gSeagcjz3P3yyrVjkMl5UUSX",
+        "expires": "2017-12-05T19:52:13.000Z",
+        "domain": "qq.com",
+        "path": "/",
+        "hostOnly": false,
+        "creation": "2017-12-05T07:49:09.871Z",
+        "lastAccessed": "2017-12-05T07:52:15.739Z"
+      }
+    }
+  }
+}

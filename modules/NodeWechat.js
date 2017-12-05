@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-05 16:09:30
+ * @Last Modified time: 2017-12-05 19:50:38
  */
 const events = require('events');
 const logger = require('../lib/logger');
@@ -57,10 +57,26 @@ class NodeWechat {
     if (res.code == 408) throw new Error('qrcode scan result error');
   }
   async login() {
-    let info = await requestWechatApi.login(this.data.redirect_uri);
-    if (!info) throw new Error(`login error`);
-    Object.assign(this.data, info);
-    this.emit('login', info.User);
+    //let info = await requestWechatApi.login(this.data.redirect_uri);
+    let res = await requestWechatApi.login(arguments[0]);
+    if (res.step === 'qr') {
+      this.emit('qr.get', {
+        QRcode: QR.imageSync(res.uri, {
+          type: 'png'
+        }),
+        url: res.uri
+      });
+      await this.login(res);
+    }
+    if (res.step === 'waiting') {
+      this.emit('qr.waiting');
+      await sleep(1000);
+      await this.login(res);
+    }
+    if (res.step === 'success') {
+      Object.assign(this.data, info);
+      this.emit('login', info.User);
+    }
   }
   /**
    * get member and batch member
