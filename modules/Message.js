@@ -2,14 +2,16 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-04 18:18:26
+ * @Last Modified time: 2017-12-05 11:20:22
  */
 const xml2json = require('../lib/decodeXML2JSON');
+// just for vscode intelligent
+const NodeWechat = require('./NodeWechat');
 class Message {
   /**
    * Creates an instance of Msg.
-   * @param {object} obj 
-   * @param {NodeWechat} wechat 
+   * @param {object} obj - wechat message
+   * @param {NodeWechat} wechat - instance of NodeWechat
    * @memberof Msg
    */
   constructor(obj, wechat) {
@@ -57,9 +59,10 @@ class Message {
     if (this.isGroupMsg()) {
       // If the sender of the message is self,there is no `:<br/>` in msg.Content
       if (this.Content.indexOf(':<br/>') !== -1 && this.Content.startsWith('@')) {
+        const [Content, FromUserName] = this.Content.split(':<br/>')
         this.FromGroup = this.FromUser;
-        this.Content = this.Content.split(':<br/>')[1];
-        this.FromUser = this.wechat.getMemberByUserName(this.Content.split(':<br/>')[0]);
+        this.Content = Content;
+        this.FromUser = this.wechat.getMemberByUserName(FromUserName);
       } else {
         // the sender of the message is self
         this.FromGroup = this.ToUser;
@@ -72,7 +75,10 @@ class Message {
         break;
       case 3:
         //image
-
+        json = xml2json(this.Content);
+        if (json) {
+          
+        }
         break;
       case 49:
         json = xml2json(this.Content);

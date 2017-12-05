@@ -2,12 +2,11 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-05 09:36:57
+ * @Last Modified time: 2017-12-05 16:09:30
  */
 const events = require('events');
 const logger = require('../lib/logger');
 const QR = require('qr-image');
-const sleep = require('../lib/sleep');
 const requestWechatApi = require('../lib/requestWechatApi');
 const Message = require('./Message');
 const Member = require('./Member');
@@ -17,7 +16,8 @@ const sleep = delay => new Promise((onFullfilled, onRejected) => {
   setTimeout(() => {
     onFullfilled()
   }, delay);
-})
+});
+
 class NodeWechat {
   /**
    * Creates an instance of NodeWechat.
@@ -44,7 +44,7 @@ class NodeWechat {
     });
   }
   async QRcodeScanResult() {
-    let res = await requestWechatApi.QRcodeScanResult(this.data.uuid, 1);
+    let res = await requestWechatApi.QRcodeScanResult(this.data.uuid);
     if (!res) res = {}
     if (res.code == 201) {
       this.emit('qr.waiting', res);
