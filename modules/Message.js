@@ -2,9 +2,11 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-05 11:20:22
+ * @Last Modified time: 2017-12-07 13:46:50
  */
 const xml2json = require('../lib/decodeXML2JSON');
+const fse = require('fs-extra');
+const requestWechatApi = require('../lib/requestWechatApi');
 // just for vscode intelligent
 const NodeWechat = require('./NodeWechat');
 class Message {
@@ -17,10 +19,9 @@ class Message {
   constructor(obj, wechat) {
     this.wechat = wechat;
     this.__init(obj);
-    this.parse();
   }
 
-  __init(obj, wechat) {
+  __init(obj) {
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         const element = obj[key];
@@ -28,7 +29,7 @@ class Message {
       }
     }
   }
-  parse() {
+  async parse() {
     `MsgType    说明
       1         文本消息
       3         图片消息
@@ -60,9 +61,12 @@ class Message {
       // If the sender of the message is self,there is no `:<br/>` in msg.Content
       if (this.Content.indexOf(':<br/>') !== -1 && this.Content.startsWith('@')) {
         const [Content, FromUserName] = this.Content.split(':<br/>')
-        this.FromGroup = this.FromUser;
         this.Content = Content;
-        this.FromUser = this.wechat.getMemberByUserName(FromUserName);
+        this.FromUser = this.wechat.getMemberByUserName(FromUserName) ||
+          new this.wechat.Member({
+            NickName: '<empty>'
+          });
+        this.FromGroup = this.FromUser;
       } else {
         // the sender of the message is self
         this.FromGroup = this.ToUser;
@@ -75,9 +79,14 @@ class Message {
         break;
       case 3:
         //image
-        json = xml2json(this.Content);
-        if (json) {
-          
+        if (this.wechat.data.autoDownloadMedia) {
+          this.wechat.getMsgMedia(this, 'images');
+        }
+        break;
+      case 43:
+        //video
+        if (this.wechat.data.autoDownloadMedia) {
+          this.wechat.getMsgMedia(this, 'video');
         }
         break;
       case 49:

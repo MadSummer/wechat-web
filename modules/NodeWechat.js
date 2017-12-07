@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-05 23:07:05
+ * @Last Modified time: 2017-12-07 13:46:49
  */
 const events = require('events');
 const logger = require('../lib/logger');
@@ -26,8 +26,9 @@ class NodeWechat {
    */
   constructor(conf) {
     this.data = {
+      autoDownloadMedia: true,
       MsgList: [],
-      MemberList: []
+      MemberList: [],
     };
     this.Message = Message;
     this.Member = Member;
@@ -102,6 +103,8 @@ class NodeWechat {
       //wechat init msg,ignore
       if (data.MsgType === 51) return;
       let msg = new this.Message(data, this);
+      // maybe need download media
+      await msg.parse();
       this.data.MsgList.push(msg);
       msgs.push(msg);
     }
@@ -143,19 +146,11 @@ class NodeWechat {
    * @memberof NodeWechat
    */
   async getMsgMedia(msg, type) {
-    switch (type) {
-      case 'image':
-
-        break;
-      case 'video':
-
-        break;
-      case 'file':
-
-        break;
-      default:
-        break;
-    }
+    let filePath = await requestWechatApi.getMsgMedia(this.data, msg, type);
+    msg.FilePath = filePath;
+    this.emit('message.media', {
+      msg
+    });
   }
   async logout() {
     let flag = await logout(this.data).catch(err => {

@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-04 17:54:44
+ * @Last Modified time: 2017-12-07 17:54:20
  */
 const wechat = require('../index');
 const logger = require('../logger');
@@ -20,13 +20,13 @@ const interactive = {
       message: '请选择操作',
       prefix: '--',
       choices: [{
-          name: '查找联系人',
-          value: 'search'
-        },
-        {
-          name: '退出账号',
-          value: 'logout'
-        }
+        name: '查找联系人',
+        value: 'search'
+      },
+      {
+        name: '退出账号',
+        value: 'logout'
+      }
       ]
     }
     inquirer.prompt(qus).then(answer => {
@@ -51,7 +51,7 @@ const interactive = {
       validate: str => str.trim() === '' ? '输入不能为空' : true
     }]
     inquirer.prompt(qus).then(answer => {
-      let result = wechat.searchContact({
+      let result = wechat.searchInMemberList({
         kw: answer.kw
       });
       if (result.length == 0) {
@@ -95,17 +95,17 @@ const interactive = {
       message: '请选择操作',
       suffix: '输入数字进入操作：',
       choices: [{
-          name: '发送消息',
-          value: 1
-        },
-        {
-          name: '查看详情',
-          value: 2
-        },
-        {
-          name: '返回上一级',
-          value: 0
-        }
+        name: '发送消息',
+        value: 1
+      },
+      {
+        name: '查看详情',
+        value: 2
+      },
+      {
+        name: '返回上一级',
+        value: 0
+      }
       ]
     }];
     inquirer.prompt(qus).then(answer => {
@@ -145,19 +145,19 @@ const interactive = {
   },
   sendMsg: member => {
     const qus = [{
-        type: 'input',
-        name: 'content',
-        message: '请输入消息内容：'
-      },
-      {
-        type: 'confirm',
-        name: 'send',
-        default: true,
-        message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
-        when: answer => {
-          return !!answer.content
-        }
+      type: 'input',
+      name: 'content',
+      message: '请输入消息内容：'
+    },
+    {
+      type: 'confirm',
+      name: 'send',
+      default: true,
+      message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
+      when: answer => {
+        return !!answer.content
       }
+    }
     ];
     inquirer.prompt(qus).then(answer => {
       if (answer.send && answer.content) {
@@ -215,7 +215,10 @@ wechat
           msgDetails += `${msg.Content}`;
           break;
         case 3:
-          //logger.debug(`${msg.FromUser.NickName} to ${msg.ToUser.NickName}:${msg.Content}`)
+          msgDetails += `发了一张图片`;
+          break;
+        case 43:
+          msgDetails += `发了一个视频`;
           break;
         case 49:
           msgDetails += `分享链接：\n标题：${msg.Content.title}\n`;
@@ -227,6 +230,12 @@ wechat
       }
       logger.debug(msgDetails);
     });
+  })
+  .on('message.media', ({ msg }) => {
+    let info = `${msg.FromUser.getFullName()} 发送的`;
+    info += `${msg.MsgType == 3 ? '图片' : msg.MsgType == 43 ? '视频' : '文件 '}`;
+    info += `下载完成，文件路径：${msg.FilePath}`;
+    logger.debug(info);
   })
   .on('send', data => {
     //logger.debug(data)
