@@ -2,11 +2,17 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-07 18:21:02
+ * @Last Modified time: 2017-12-07 22:02:18
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
 const requestWechatApi = require('../lib/requestWechatApi');
+const util = require('util');
+const mediaType = {
+  IMAGE: 'image',
+  VIDEO: 'video',
+  FILE:'file'
+}
 // just for vscode intelligent
 const NodeWechat = require('./NodeWechat');
 class Message {
@@ -28,6 +34,8 @@ class Message {
         this[key] = element;
       }
     }
+    this.parsed = false; // is this has parsed
+    this.__Content = this.Content; // save real content 
   }
   async parse() {
     `MsgType    说明
@@ -41,6 +49,9 @@ class Message {
       47        动画表情
       48        位置消息
       49        分享链接
+         5 链接
+         6 文件消息
+         3 音乐
       50        VOIPMSG
       51        微信初始化消息
       52        VOIPNOTIFY
@@ -49,6 +60,7 @@ class Message {
       9999      SYSNOTICE
       10000     系统消息
       10002     撤回消息`
+    this.parsed = true;
     this.FromUser = this.wechat.getMemberByUserName(this.FromUserName) ||
       new this.wechat.Member({
         NickName: '<empty>'
@@ -72,7 +84,7 @@ class Message {
         this.FromGroup = this.ToUser;
       }
     }
-    let json;
+    let json = xml2json(this.Content);;
     switch (this.MsgType) {
       case 1:
         // text
@@ -80,41 +92,22 @@ class Message {
       case 3:
         //image
         if (this.wechat.data.autoDownloadMedia) {
-          this.wechat.getMsgMedia(this, 'images');
+          this.wechat.getMsgMedia(this, mediaType.IMAGE);
         }
         break;
       case 43:
         //video
         if (this.wechat.data.autoDownloadMedia) {
-          this.wechat.getMsgMedia(this, 'video');
+          this.wechat.getMsgMedia(this, mediaType.VIDEO);
         }
         break;
       case 49:
-        if (this.FileName) {
-          if (this.wechat.data.autoDownloadMedia) {
-            this.wechat.getMsgMedia(this, 'file');
-          }
-          return;
-        }
-        json = xml2json(this.Content);
-        let msg;
-        if (json) {
-          msg = json.msg;
-          this.Content = {
-            appname: msg.appinfo.appname,
-            desc: msg.appmsg.des,
-            title: msg.appmsg.title,
-            url: msg.appmsg.url
-          }
-        }
+        this.parseShareContent(json);
         break;
       case 10002:
         // revoked
-        json = xml2json(this.Content);
-        if (json) {
-          let revokedMsgId = json.sysmsg.revokemsg.msgid;
-          this.RevokedMsg = this.wechat.getMsgByMsgId(revokedMsgId);
-        }
+        let revokedMsgId = json.sysmsg.revokemsg.msgid;
+        this.RevokedMsg = this.wechat.getMsgByMsgId(revokedMsgId);
         this.wechat.sendRevokedMsgToOther(this.RevokedMsg);
         break;
       default:
@@ -124,5 +117,36 @@ class Message {
   isGroupMsg() {
     return this.FromUserName.startsWith('@@') || this.ToUserName.startsWith('@@')
   }
+  parseShareContent(shareContent) {
+    if (!shareContent) return;
+    let msg;
+    msg = shareContent.msg;
+    this.shareType = +msg.appmsg.type;
+    // common prop
+    this.Content = {
+      appname: msg.appinfo.appname,
+      desc: msg.appmsg.des,
+      title: msg.appmsg.title,
+      url: msg.appmsg.url
+    }
+    switch (this.shareType) {
+      case 3:
+        // music
+        break;
+      case 5:
+        // url
+        break;
+      case 6:
+        // file
+        this.Content.size = +this.FileSize;
+        if (this.wechat.data.autoDownloadMedia) {
+          this.wechat.getMsgMedia(this, mediaType.FILE);
+        }
+        break;
+      default:
+        break;
+    }
+  }
 }
+Message.mediaType = mediaType;
 module.exports = Message;
