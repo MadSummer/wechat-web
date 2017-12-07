@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-07 22:09:45
+ * @Last Modified time: 2017-12-07 22:14:05
  */
 const wechat = require('../index');
 const logger = require('../logger');
@@ -223,12 +223,12 @@ wechat
         case 49:
           switch (msg.shareType) {
             case 3:
-              msgDetails += `分享链接：\n标题：${msg.Content.title}\n`;
+              msgDetails += `分享音乐：\n歌名：${msg.Content.title}\n`;
               msgDetails += `描述：${msg.Content.desc}\n地址：${msg.Content.url}\n`;
               msgDetails += `应用名称：${msg.Content.appname}`;
               break;
             case 5:
-              msgDetails += `分享音乐：\n歌名：${msg.Content.title}\n`;
+              msgDetails += `分享链接：\n标题：${msg.Content.title}\n`;
               msgDetails += `描述：${msg.Content.desc}\n地址：${msg.Content.url}\n`;
               msgDetails += `应用名称：${msg.Content.appname}`;
               break;
