@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-07 13:46:50
+ * @Last Modified time: 2017-12-07 18:21:02
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
@@ -90,6 +90,12 @@ class Message {
         }
         break;
       case 49:
+        if (this.FileName) {
+          if (this.wechat.data.autoDownloadMedia) {
+            this.wechat.getMsgMedia(this, 'file');
+          }
+          return;
+        }
         json = xml2json(this.Content);
         let msg;
         if (json) {
