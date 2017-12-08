@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 10:42:19
+ * @Last Modified time: 2017-12-08 11:53:18
  */
 
 const events = require('events');
@@ -11,14 +11,8 @@ const QR = require('qr-image');
 const requestWechatApi = require('../lib/requestWechatApi');
 const Message = require('./Message');
 const Member = require('./Member');
-
-
 const emitter = new events.EventEmitter();
-/**
- * sleep
- * @param {number} ms - millisecond
- */
-const sleep = ms => new Promise(onFullfilled => setTimeout(onFullfilled, ms));
+const sleep = require('../lib/tools');
 
 class NodeWechat {
   /**
@@ -88,7 +82,7 @@ class NodeWechat {
    */
   async getContact() {
     /**
-     * @event NodeWechat#contact.get.start - get contact start
+     * @event NodeWechat#contact.get.start
      */
     this.emit('contact.get.start');
     let memberList = await requestWechatApi.getContact(this.data);
@@ -99,7 +93,7 @@ class NodeWechat {
       this.data.MemberList.push(new this.Member(member));
     }
     /**
-     * @event NodeWechat#contact.get.end - get contact end
+     * @event NodeWechat#contact.get.end
      */
     this.emit('contact.get.end', this.data.MemberList);
   }
@@ -151,7 +145,7 @@ class NodeWechat {
       msgs.push(msg);
     }
     /**
-     * @event NodeWechat#message - new message got
+     * @event NodeWechat#message
      */
     this.emit('message', msgs);
   }
@@ -161,6 +155,7 @@ class NodeWechat {
    * @param {string} msg.Content - message content
    * @param {string | number} msg.ToUser - message to
    * @returns {PromiseLike}
+   * @memberof NodeWechat
    */
   async sendMsg(msg) {
     if (!msg.Content) return this.emit('error', {
@@ -216,7 +211,7 @@ class NodeWechat {
       await this.login();
       await this.getContact();
       /**
-       * @event NodeWechat#init - init success
+       * @event NodeWechat#init
        */
       this.emit('init', this.data);
       await this.getMsg();
@@ -247,7 +242,7 @@ class NodeWechat {
   /**
    * get a memeber by UserName
    * @param {string} UserName 
-   * @returns {Member || undefined}
+   * @returns {Member}
    * @memberof NodeWechat
    */
   getMemberByUserName(UserName) {
@@ -322,4 +317,4 @@ class NodeWechat {
     return this;
   }
 }
-module.exports = new NodeWechat()
+module.exports = NodeWechat
