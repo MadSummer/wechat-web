@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 13:47:07
+ * @Last Modified time: 2017-12-08 16:19:52
  */
 
 const events = require('events');
@@ -13,7 +13,7 @@ const Message = require('./Message');
 const Member = require('./Member');
 const emitter = new events.EventEmitter();
 const sleep = require('../lib/tools').sleep;
-
+const robot = require('../lib/tuling');
 class NodeWechat {
   /**
    * Creates an instance of NodeWechat.
@@ -141,6 +141,13 @@ class NodeWechat {
       let msg = new this.Message(data, this);
       // await msg parse
       await msg.parse();
+      if (msg.ToUserName == 'filehelper') {
+        let reply = await this.robot(msg.Content)
+        this.sendMsg({
+          Content: reply,
+          ToUserName:'filehelper'
+        });
+      }
       this.data.MsgList.push(msg);
       msgs.push(msg);
     }
@@ -153,7 +160,7 @@ class NodeWechat {
    * 
    * @param {Object} msg - message
    * @param {string} msg.Content - message content
-   * @param {string | number} msg.ToUser - message to
+   * @param {string | number} msg.ToUserName - message to
    * @returns {PromiseLike}
    * @memberof NodeWechat
    */
@@ -294,6 +301,31 @@ class NodeWechat {
       ToUserName
     });
   }
+
+  async robot(text) {
+    let reply = await robot(text).then(res => {
+      switch (+res.code) {
+        case 100000:
+          return res.text;
+          break;
+        case 200000:
+          return `${res.text}\n${res.url}`
+          break;
+        case 302000:
+          let content = '找到以下新闻：\n';
+          res.list.forEach((news, index) => {
+            content += `\n【${index + 1}】：${news.article}`;
+            content += `\n链接：${news.detailurl}`;
+            content += `\n来源：${news.source}`;
+          });
+          return content;
+        default:
+          break;
+      }
+    });
+    return reply;
+  }
+
   /**
    * add eventlistener
    * @param {string} evt -event name

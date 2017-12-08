@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 13:52:27
+ * @Last Modified time: 2017-12-08 15:12:31
  */
 const NodeWechat = require('../index');
 const logger = require('../logger');
@@ -18,7 +18,6 @@ const interactive = {
       type: 'list',
       name: 'action',
       message: '请选择操作',
-      prefix: '--',
       choices: [{
         name: '查找联系人',
         value: 'search'
@@ -65,7 +64,7 @@ const interactive = {
             value: member
           });
         });
-        interactive.showMemberList(memberList)
+        interactive.showMemberList(memberList);
       }
     });
   },

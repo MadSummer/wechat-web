@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ./app/app.js",
-    "sendMsg": ""
+    "terminal": "node ./bin/terminal.js"
   },
   "author": "",
   "license": "ISC",
