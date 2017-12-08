@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-07 22:02:18
+ * @Last Modified time: 2017-12-08 09:57:03
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
@@ -11,7 +11,7 @@ const util = require('util');
 const mediaType = {
   IMAGE: 'image',
   VIDEO: 'video',
-  FILE:'file'
+  FILE: 'file'
 }
 // just for vscode intelligent
 const NodeWechat = require('./NodeWechat');
@@ -60,6 +60,7 @@ class Message {
       9999      SYSNOTICE
       10000     系统消息
       10002     撤回消息`
+    if (this.parsed) return;
     this.parsed = true;
     this.FromUser = this.wechat.getMemberByUserName(this.FromUserName) ||
       new this.wechat.Member({
@@ -72,7 +73,7 @@ class Message {
     if (this.isGroupMsg()) {
       // If the sender of the message is self,there is no `:<br/>` in msg.Content
       if (this.Content.indexOf(':<br/>') !== -1 && this.Content.startsWith('@')) {
-        const [Content, FromUserName] = this.Content.split(':<br/>')
+        const [FromUserName, Content] = this.Content.split(':<br/>')
         this.Content = Content;
         this.FromUser = this.wechat.getMemberByUserName(FromUserName) ||
           new this.wechat.Member({
@@ -84,7 +85,7 @@ class Message {
         this.FromGroup = this.ToUser;
       }
     }
-    let json = xml2json(this.Content);;
+    let json = xml2json(this.__Content);;
     switch (this.MsgType) {
       case 1:
         // text
@@ -122,7 +123,7 @@ class Message {
     let msg;
     msg = shareContent.msg;
     this.shareType = +msg.appmsg.type;
-    // common prop
+    // common properties
     this.Content = {
       appname: msg.appinfo.appname,
       desc: msg.appmsg.des,

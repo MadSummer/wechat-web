@@ -2,8 +2,9 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-07 13:46:49
+ * @Last Modified time: 2017-12-08 10:42:19
  */
+
 const events = require('events');
 const logger = require('../lib/logger');
 const QR = require('qr-image');
@@ -11,12 +12,13 @@ const requestWechatApi = require('../lib/requestWechatApi');
 const Message = require('./Message');
 const Member = require('./Member');
 
+
 const emitter = new events.EventEmitter();
-const sleep = delay => new Promise((onFullfilled, onRejected) => {
-  setTimeout(() => {
-    onFullfilled()
-  }, delay);
-});
+/**
+ * sleep
+ * @param {number} ms - millisecond
+ */
+const sleep = ms => new Promise(onFullfilled => setTimeout(onFullfilled, ms));
 
 class NodeWechat {
   /**
@@ -33,11 +35,25 @@ class NodeWechat {
     this.Message = Message;
     this.Member = Member;
   }
+  /**
+   * login 
+   * @fires NodeWechat#qr.get - get a QR code
+   * @fires NodeWechat#waiting - waiting confirm login on mobile wechat
+   * @fires NodeWechat#login - login successful
+   * @throws login error
+   * @memberof NodeWechat
+   */
   async login() {
     let res = await requestWechatApi.login(arguments[0]);
     if (!res) throw new Error(`login error`);
     // get qrcode
     if (res.step === 'qr') {
+      /**
+       * @event NodeWechat#qr.get
+       * @type {object}
+       * @property {Buffer} QRcode - QRcode image binary
+       * @property {string} url - QRcode's text
+       */
       this.emit('qr.get', {
         QRcode: QR.imageSync(res.uri, {
           type: 'png'
@@ -48,6 +64,9 @@ class NodeWechat {
     }
     // waiting confirm login
     if (res.step === 'waiting') {
+      /**
+       * @event NodeWechat#waiting
+       */
       this.emit('qr.waiting');
       await sleep(1000);
       await this.login(res);
@@ -55,15 +74,22 @@ class NodeWechat {
     // login success
     if (res.step === 'success') {
       Object.assign(this.data, res);
-      this.emit('login', res.User);
+      this.data.User = new this.Member(this.data.User);
+      /**
+       * @event NodeWechat#login
+       * @type {Member}
+       */
+      this.emit('login', this.data.User);
     }
   }
   /**
    * get member and batch member
-   * 
    * @memberof NodeWechat
    */
   async getContact() {
+    /**
+     * @event NodeWechat#contact.get.start - get contact start
+     */
     this.emit('contact.get.start');
     let memberList = await requestWechatApi.getContact(this.data);
     // clear old data
@@ -72,8 +98,17 @@ class NodeWechat {
       const member = memberList[i];
       this.data.MemberList.push(new this.Member(member));
     }
+    /**
+     * @event NodeWechat#contact.get.end - get contact end
+     */
     this.emit('contact.get.end', this.data.MemberList);
   }
+  /**
+   *  is there any new messages
+   * @fires NodeWechat#error - error 
+   * @fires NodeWechat#logout - logout
+   * @memberof NodeWechat
+   */
   async __checkMsg() {
     let res = await requestWechatApi.checkMsg(this.data).catch(error => {
       this.emit('error', error);
@@ -89,6 +124,13 @@ class NodeWechat {
     }
     this.__checkMsg();
   }
+  /**
+   * get new messages
+   * @fires NodeWechat#message
+   * @fires NodeWechat#error
+   * @returns {PromiseLike}
+   * @memberof NodeWechat
+   */
   async getMsg() {
     let res = await requestWechatApi.getMsg(this.data).catch(error => {
       this.emit('error', error);
@@ -103,11 +145,14 @@ class NodeWechat {
       //wechat init msg,ignore
       if (data.MsgType === 51) return;
       let msg = new this.Message(data, this);
-      // maybe need download media
+      // await msg parse
       await msg.parse();
       this.data.MsgList.push(msg);
       msgs.push(msg);
     }
+    /**
+     * @event NodeWechat#message - new message got
+     */
     this.emit('message', msgs);
   }
   /**
@@ -138,9 +183,8 @@ class NodeWechat {
     this.emit('send', msg);
   }
   /**
-   * 
-   * 
-   * @param {Msg} msg - msg
+   * get message's media
+   * @param {Message} msg - msg
    * @param {string} type - msg type
    * image || video || file
    * @memberof NodeWechat
@@ -152,18 +196,28 @@ class NodeWechat {
       msg
     });
   }
+  /**
+   * logout
+   * @memberof NodeWechat
+   */
   async logout() {
     let flag = await logout(this.data).catch(err => {
 
     });
     if (flag) return this.emit('logout')
   }
+  /**
+   * init a NodeWechat instance
+   * @fires NodeWechat#init
+   * @memberof NodeWechat
+   */
   async init() {
     try {
-      /* await this.getQRcode();
-      await this.QRcodeScanResult(); */
       await this.login();
       await this.getContact();
+      /**
+       * @event NodeWechat#init - init success
+       */
       this.emit('init', this.data);
       await this.getMsg();
       this.__checkMsg();
@@ -190,6 +244,12 @@ class NodeWechat {
     }
     return members;
   }
+  /**
+   * get a memeber by UserName
+   * @param {string} UserName 
+   * @returns {Member || undefined}
+   * @memberof NodeWechat
+   */
   getMemberByUserName(UserName) {
     let list = this.data.MemberList;
     for (let i = 0; i < list.length; i++) {
@@ -227,7 +287,7 @@ class NodeWechat {
     }
   }
   /**
-   * 
+   * send revoked message to anyone,default is filehelper
    * @param {Msg} msg - revoked msg
    * @param {string} ToUserName - sent to whom
    */
@@ -239,10 +299,24 @@ class NodeWechat {
       ToUserName
     });
   }
+  /**
+   * add eventlistener
+   * @param {string} evt -event name
+   * @param {function} cb - callback
+   * @returns {NodeWechat}
+   * @memberof NodeWechat
+   */
   on(evt, cb) {
     emitter.on(evt, cb)
     return this;
   }
+  /**
+   * emit a event
+   * @param {string} evt - event name
+   * @param {Object} data 
+   * @returns {NodeWechat}
+   * @memberof NodeWechat
+   */
   emit(evt, data) {
     emitter.emit(evt, data);
     return this;
