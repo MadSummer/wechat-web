@@ -2,3 +2,4 @@ node_modules
 upload
 logs
 /file
+./lib/tuling.js
