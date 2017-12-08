@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 13:39:11
+ * @Last Modified time: 2017-12-08 14:57:04
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
@@ -79,7 +79,7 @@ class Message {
           new this.wechat.Member({
             NickName: '<empty>'
           });
-        this.FromGroup = this.FromUser;
+        this.FromGroup = this.wechat.getMemberByUserName(this.FromUserName);
       } else {
         // the sender of the message is self
         this.FromGroup = this.ToUser;
@@ -111,12 +111,6 @@ class Message {
         //video
         if (this.wechat.data.autoDownloadMedia) {
           this.wechat.getMsgMedia(this, mediaType.VIDEO);
-        }
-        break;
-      case 48:
-        this.Content = {
-          point: '',
-          desc: ''
         }
         break;
       case 49:
