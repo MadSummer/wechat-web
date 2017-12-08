@@ -2,9 +2,9 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 11:03:22
+ * @Last Modified time: 2017-12-08 12:26:05
  */
-const wechat = require('../index');
+const NodeWechat = require('../index');
 const logger = require('../logger');
 const qrTerminal = require('qrcode-terminal');
 const ora = require('ora');
@@ -20,13 +20,13 @@ const interactive = {
       message: '请选择操作',
       prefix: '--',
       choices: [{
-          name: '查找联系人',
-          value: 'search'
-        },
-        {
-          name: '退出账号',
-          value: 'logout'
-        }
+        name: '查找联系人',
+        value: 'search'
+      },
+      {
+        name: '退出账号',
+        value: 'logout'
+      }
       ]
     }
     inquirer.prompt(qus).then(answer => {
@@ -95,17 +95,17 @@ const interactive = {
       message: '请选择操作',
       suffix: '输入数字进入操作：',
       choices: [{
-          name: '发送消息',
-          value: 1
-        },
-        {
-          name: '查看详情',
-          value: 2
-        },
-        {
-          name: '返回上一级',
-          value: 0
-        }
+        name: '发送消息',
+        value: 1
+      },
+      {
+        name: '查看详情',
+        value: 2
+      },
+      {
+        name: '返回上一级',
+        value: 0
+      }
       ]
     }];
     inquirer.prompt(qus).then(answer => {
@@ -145,19 +145,19 @@ const interactive = {
   },
   sendMsg: member => {
     const qus = [{
-        type: 'input',
-        name: 'content',
-        message: '请输入消息内容：'
-      },
-      {
-        type: 'confirm',
-        name: 'send',
-        default: true,
-        message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
-        when: answer => {
-          return !!answer.content
-        }
+      type: 'input',
+      name: 'content',
+      message: '请输入消息内容：'
+    },
+    {
+      type: 'confirm',
+      name: 'send',
+      default: true,
+      message: `发送消息给${wechat.getFullName(member)},回车默认确认`,
+      when: answer => {
+        return !!answer.content
       }
+    }
     ];
     inquirer.prompt(qus).then(answer => {
       if (answer.send && answer.content) {
@@ -182,7 +182,7 @@ const interactive = {
     });
   }
 }
-wechat
+new NodeWechat()
   .on('qr.get', data => {
     qrTerminal.generate(data.url, {
       small: true
@@ -217,6 +217,12 @@ wechat
         case 3:
           msgDetails += `发了一张图片`;
           break;
+        case 42:
+          msgDetails += `分享名片\n昵称：${msg.Content.NickName}\n`;
+          msgDetails += `性别：${msg.Content.Sex == 2 ? '女' : msg.Content.Sex == 1 ? '男' : '未知'}\n`;
+          msgDetails +=`所在地：${msg.Content.Province}\n`
+          msgDetails += `微信号：${msg.Content.WechatNum}`;
+          break
         case 43:
           msgDetails += `发了一个视频`;
           break;
@@ -234,7 +240,7 @@ wechat
               break;
             case 6:
               msgDetails += `发来文件：\n文件名：${msg.Content.title}\n`;
-              msgDetails += `大小：${(msg.Content.size/1024).toFixed(2)}kb`;
+              msgDetails += `大小：${(msg.Content.size / 1024).toFixed(2)}kb`;
               break;
             default:
               break;

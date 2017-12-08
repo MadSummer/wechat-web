@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 09:57:03
+ * @Last Modified time: 2017-12-08 13:39:11
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
@@ -49,9 +49,9 @@ class Message {
       47        动画表情
       48        位置消息
       49        分享链接
-         5 链接
-         6 文件消息
-         3 音乐
+       5        链接
+       6        文件消息
+       3        音乐
       50        VOIPMSG
       51        微信初始化消息
       52        VOIPNOTIFY
@@ -85,10 +85,15 @@ class Message {
         this.FromGroup = this.ToUser;
       }
     }
-    let json = xml2json(this.__Content);;
+    let json = xml2json(this.__Content);
     switch (this.MsgType) {
       case 1:
         // text
+        if (this.SubMsgType == 48) {
+          //location
+          let location = xml2json(this.OriContent).msg.location.$;
+          this.Content = `地理位置：${location.poiname}(${location.label})`
+        }
         break;
       case 3:
         //image
@@ -96,10 +101,22 @@ class Message {
           this.wechat.getMsgMedia(this, mediaType.IMAGE);
         }
         break;
+      case 42:
+        //cards
+        let username = json.msg.$.username
+        this.Content = this.RecommendInfo;
+        this.Content.WechatNum = username.indexOf('wxid_') == -1 ? username : json.msg.$.alias;
+        break;
       case 43:
         //video
         if (this.wechat.data.autoDownloadMedia) {
           this.wechat.getMsgMedia(this, mediaType.VIDEO);
+        }
+        break;
+      case 48:
+        this.Content = {
+          point: '',
+          desc: ''
         }
         break;
       case 49:

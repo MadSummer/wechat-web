@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 11:53:18
+ * @Last Modified time: 2017-12-08 12:05:19
  */
 
 const events = require('events');
@@ -12,7 +12,7 @@ const requestWechatApi = require('../lib/requestWechatApi');
 const Message = require('./Message');
 const Member = require('./Member');
 const emitter = new events.EventEmitter();
-const sleep = require('../lib/tools');
+const sleep = require('../lib/tools').sleep;
 
 class NodeWechat {
   /**
