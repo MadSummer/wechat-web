@@ -2,16 +2,29 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 14:57:04
+ * @Last Modified time: 2017-12-12 09:43:13
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
 const requestWechatApi = require('../lib/requestWechatApi');
 const util = require('util');
 const mediaType = {
-  IMAGE: 'image',
-  VIDEO: 'video',
-  FILE: 'file'
+  image: {
+    name: 'image',
+    suffix:'jpg'
+  },
+  video: {
+    name: 'vido',
+    suffix:'flv'
+  },
+  file: {
+    name: 'file',
+    suffix:''
+  },
+  voice: {
+    name: 'voice',
+    suffix:'mp3'
+  }
 }
 // just for vscode intelligent
 const NodeWechat = require('./NodeWechat');
@@ -98,7 +111,7 @@ class Message {
       case 3:
         //image
         if (this.wechat.data.autoDownloadMedia) {
-          this.wechat.getMsgMedia(this, mediaType.IMAGE);
+          this.wechat.getMsgMedia(this, mediaType.image.name);
         }
         break;
       case 42:
@@ -110,7 +123,7 @@ class Message {
       case 43:
         //video
         if (this.wechat.data.autoDownloadMedia) {
-          this.wechat.getMsgMedia(this, mediaType.VIDEO);
+          this.wechat.getMsgMedia(this, mediaType.video.name);
         }
         break;
       case 49:
@@ -152,7 +165,7 @@ class Message {
         // file
         this.Content.size = +this.FileSize;
         if (this.wechat.data.autoDownloadMedia) {
-          this.wechat.getMsgMedia(this, mediaType.FILE);
+          this.wechat.getMsgMedia(this, mediaType.file.name);
         }
         break;
       default:
