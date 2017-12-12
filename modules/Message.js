@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-12 09:43:13
+ * @Last Modified time: 2017-12-12 20:49:14
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
@@ -14,7 +14,7 @@ const mediaType = {
     suffix:'jpg'
   },
   video: {
-    name: 'vido',
+    name: 'video',
     suffix:'flv'
   },
   file: {
