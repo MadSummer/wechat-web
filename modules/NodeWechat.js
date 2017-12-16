@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 16:19:52
+ * @Last Modified time: 2017-12-16 15:14:30
  */
 
 const events = require('events');
@@ -14,6 +14,7 @@ const Member = require('./Member');
 const emitter = new events.EventEmitter();
 const sleep = require('../lib/tools').sleep;
 const robot = require('../lib/tuling');
+const ASR = require('../lib/baiduASR');
 class NodeWechat {
   /**
    * Creates an instance of NodeWechat.
@@ -23,6 +24,7 @@ class NodeWechat {
   constructor(conf) {
     this.data = {
       autoDownloadMedia: true,
+      autoTransformVoice:true,
       MsgList: [],
       MemberList: [],
     };
@@ -194,6 +196,12 @@ class NodeWechat {
   async getMsgMedia(msg, type) {
     let filePath = await requestWechatApi.getMsgMedia(this.data, msg, type);
     msg.FilePath = filePath;
+    if (this.data.autoTransformVoice && type == Message.mediaType.voice.name) {
+      let voiceText = await ASR.asr(msg.FilePath);
+      if (voiceText.result) {
+        msg.VoiceToText = voiceText.result.join('')
+      }
+    }
     this.emit('message.media', {
       msg
     });

@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-12 20:49:14
+ * @Last Modified time: 2017-12-16 15:19:48
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
@@ -23,7 +23,7 @@ const mediaType = {
   },
   voice: {
     name: 'voice',
-    suffix:'mp3'
+    suffix:'wav'
   }
 }
 // just for vscode intelligent
@@ -112,6 +112,12 @@ class Message {
         //image
         if (this.wechat.data.autoDownloadMedia) {
           this.wechat.getMsgMedia(this, mediaType.image.name);
+        }
+        break;
+        case 34:
+        //voice
+        if (this.wechat.data.autoDownloadMedia) {
+          this.wechat.getMsgMedia(this, mediaType.voice.name);
         }
         break;
       case 42:

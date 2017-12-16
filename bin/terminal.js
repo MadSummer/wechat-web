@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-08 15:12:31
+ * @Last Modified time: 2017-12-16 14:25:36
  */
 const NodeWechat = require('../index');
 const logger = require('../logger');
@@ -258,10 +258,18 @@ wechat
   .on('message.media', ({
     msg
   }) => {
-    let info = `${msg.FromUser.getFullName()} 发送的`;
-    info += `${msg.MsgType == 3 ? '图片' : msg.MsgType == 43 ? '视频' : '文件 '}`;
+    let tmp = {
+      3: '图片',
+      43: '视频',
+      49: '文件',
+      34:'语音'
+    }
+    let info = `${msg.FromUser.getFullName()} 发送的${tmp[msg.MsgType]}`;
     info += `下载完成，文件路径：${msg.FilePath}`;
     logger.debug(info);
+    if (msg.MsgType === 34) {
+      logger.debug(`语音转文字结果：${msg.VoiceToText}`)
+    }
   })
   .on('send', data => {
     //logger.debug(data)
