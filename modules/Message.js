@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-12-03 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-16 15:19:48
+ * @Last Modified time: 2017-12-18 17:04:35
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');

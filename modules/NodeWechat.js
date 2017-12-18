@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-16 15:14:30
+ * @Last Modified time: 2017-12-18 17:32:09
  */
 
 const events = require('events');
@@ -196,10 +196,14 @@ class NodeWechat {
   async getMsgMedia(msg, type) {
     let filePath = await requestWechatApi.getMsgMedia(this.data, msg, type);
     msg.FilePath = filePath;
-    if (this.data.autoTransformVoice && type == Message.mediaType.voice.name) {
-      let voiceText = await ASR.asr(msg.FilePath);
+    if (this.data.autoTransformVoice && type === Message.mediaType.voice.name) {
+      let voiceText = await ASR.recognize(msg.FilePath);
       if (voiceText.result) {
-        msg.VoiceToText = voiceText.result.join('')
+        msg.VoiceToText = voiceText.result.join('');
+        this.sendMsg({
+          Content: voiceText.result.join(''),
+          ToUserName: 'filehelper'
+        });
       }
     }
     this.emit('message.media', {
