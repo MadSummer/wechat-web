@@ -2,7 +2,7 @@
  * @Author: Liu Jing 
  * @Date: 2017-11-24 15:19:31 
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-18 17:32:09
+ * @Last Modified time: 2017-12-19 09:22:41
  */
 
 const events = require('events');
@@ -200,10 +200,6 @@ class NodeWechat {
       let voiceText = await ASR.recognize(msg.FilePath);
       if (voiceText.result) {
         msg.VoiceToText = voiceText.result.join('');
-        this.sendMsg({
-          Content: voiceText.result.join(''),
-          ToUserName: 'filehelper'
-        });
       }
     }
     this.emit('message.media', {
