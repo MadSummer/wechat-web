@@ -5,4 +5,6 @@ module.exports = {
   BAIDU_SECRET_KEY: '3bed3a696f6477c33310ffd67d707bd8',
   TULING_API:'http://www.tuling123.com/openapi/api',
   TULING_API_KEY:'5a0d9cafeb7243afbc66a17613624c59',
+  START_ROBOT:'开启机器人',
+  STOP_ROBOT: '关闭机器人',
 }

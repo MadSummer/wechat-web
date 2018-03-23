@@ -1,8 +1,8 @@
 /*
- * @Author: Liu Jing 
- * @Date: 2017-12-03 15:19:31 
+ * @Author: Liu Jing
+ * @Date: 2017-12-03 15:19:31
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-18 17:04:35
+ * @Last Modified time: 2018-03-23 14:14:07
  */
 const xml2json = require('../lib/decodeXML2JSON');
 const fse = require('fs-extra');
@@ -11,23 +11,24 @@ const util = require('util');
 const mediaType = {
   image: {
     name: 'image',
-    suffix:'jpg'
+    suffix: 'jpg'
   },
   video: {
     name: 'video',
-    suffix:'flv'
+    suffix: 'flv'
   },
   file: {
     name: 'file',
-    suffix:''
+    suffix: ''
   },
   voice: {
     name: 'voice',
-    suffix:'wav'
+    suffix: 'wav'
   }
 }
 // just for vscode intelligent
 const NodeWechat = require('./NodeWechat');
+const config = require('../config');
 class Message {
   /**
    * Creates an instance of Msg.
@@ -48,7 +49,7 @@ class Message {
       }
     }
     this.parsed = false; // is this has parsed
-    this.__Content = this.Content; // save real content 
+    this.__Content = this.Content; // save real content
   }
   async parse() {
     `MsgType    说明
@@ -75,6 +76,10 @@ class Message {
       10002     撤回消息`
     if (this.parsed) return;
     this.parsed = true;
+    if (this.FromUserName === this.wechat.data.User.UserName && this.ToUserName === 'filehelper') {
+      this.FromUserName = 'filehelper';
+      this.ToUserName = this.wechat.data.User.UserName;
+    }
     this.FromUser = this.wechat.getMemberByUserName(this.FromUserName) ||
       new this.wechat.Member({
         NickName: '<empty>'
@@ -107,6 +112,9 @@ class Message {
           let location = xml2json(this.OriContent).msg.location.$;
           this.Content = `地理位置：${location.poiname}(${location.label})`
         }
+        if (this.Content == config.START_ROBOT || this.Content == config.STOP_ROBOT) {
+          this.FromUser.changeRobotReplay(this.Content == config.START_ROBOT);
+        }
         break;
       case 3:
         //image
@@ -114,7 +122,7 @@ class Message {
           this.wechat.getMsgMedia(this, mediaType.image.name);
         }
         break;
-        case 34:
+      case 34:
         //voice
         if (this.wechat.data.autoDownloadMedia) {
           this.wechat.getMsgMedia(this, mediaType.voice.name);

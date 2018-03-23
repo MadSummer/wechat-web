@@ -1,8 +1,8 @@
 /*
- * @Author: Liu Jing 
- * @Date: 2017-12-03 15:19:31 
+ * @Author: Liu Jing
+ * @Date: 2017-12-03 15:19:31
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-04 14:49:34
+ * @Last Modified time: 2018-03-23 13:55:12
  */
 class Member {
   constructor(obj) {
@@ -21,6 +21,9 @@ class Member {
   }
   isGroup() {
     return this.UserName.indexOf('@@') !== -1;
+  }
+  changeRobotReplay(flag){
+    this.robot = flag;
   }
 }
 module.exports = Member;

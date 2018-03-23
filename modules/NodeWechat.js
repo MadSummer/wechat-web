@@ -1,8 +1,8 @@
 /*
- * @Author: Liu Jing 
- * @Date: 2017-11-24 15:19:31 
+ * @Author: Liu Jing
+ * @Date: 2017-11-24 15:19:31
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2017-12-19 09:22:41
+ * @Last Modified time: 2018-03-23 13:53:19
  */
 
 const events = require('events');
@@ -24,7 +24,7 @@ class NodeWechat {
   constructor(conf) {
     this.data = {
       autoDownloadMedia: true,
-      autoTransformVoice:true,
+      autoTransformVoice: true,
       MsgList: [],
       MemberList: [],
     };
@@ -32,7 +32,7 @@ class NodeWechat {
     this.Member = Member;
   }
   /**
-   * login 
+   * login
    * @fires NodeWechat#qr.get - get a QR code
    * @fires NodeWechat#waiting - waiting confirm login on mobile wechat
    * @fires NodeWechat#login - login successful
@@ -101,7 +101,7 @@ class NodeWechat {
   }
   /**
    *  is there any new messages
-   * @fires NodeWechat#error - error 
+   * @fires NodeWechat#error - error
    * @fires NodeWechat#logout - logout
    * @memberof NodeWechat
    */
@@ -143,11 +143,12 @@ class NodeWechat {
       let msg = new this.Message(data, this);
       // await msg parse
       await msg.parse();
-      if (msg.ToUserName == 'filehelper') {
+
+      if (msg.FromUser.robot) {
         let reply = await this.robot(msg.Content)
         this.sendMsg({
           Content: reply,
-          ToUserName:'filehelper'
+          ToUserName: msg.FromUserName
         });
       }
       this.data.MsgList.push(msg);
@@ -159,7 +160,7 @@ class NodeWechat {
     this.emit('message', msgs);
   }
   /**
-   * 
+   *
    * @param {Object} msg - message
    * @param {string} msg.Content - message content
    * @param {string | number} msg.ToUserName - message to
@@ -236,8 +237,8 @@ class NodeWechat {
     }
   }
   /**
-   * 
-   * search member in MemberList 
+   *
+   * search member in MemberList
    * @param {object} param - search param
    * @param {string} param.kw - keyword
    * @returns {Array<Member>}
@@ -256,7 +257,7 @@ class NodeWechat {
   }
   /**
    * get a memeber by UserName
-   * @param {string} UserName 
+   * @param {string} UserName
    * @returns {Member}
    * @memberof NodeWechat
    */
@@ -284,9 +285,9 @@ class NodeWechat {
     //TODO:
   }
   /**
-   * 
+   *
    * get message by MsgId from locale message list
-   * @param {string} MsgId 
+   * @param {string} MsgId
    * @returns {Msg}
    * @memberof NodeWechat
    */
@@ -309,7 +310,15 @@ class NodeWechat {
       ToUserName
     });
   }
-
+  /**
+   *
+   *
+   * @param {Member} memeber
+   * @memberof NodeWechat
+   */
+  changeRobotReply(memeber, flag) {
+    memeber
+  }
   async robot(text) {
     let reply = await robot(text).then(res => {
       switch (+res.code) {
@@ -333,7 +342,6 @@ class NodeWechat {
     });
     return reply;
   }
-
   /**
    * add eventlistener
    * @param {string} evt -event name
@@ -348,7 +356,7 @@ class NodeWechat {
   /**
    * emit a event
    * @param {string} evt - event name
-   * @param {Object} data 
+   * @param {Object} data
    * @returns {NodeWechat}
    * @memberof NodeWechat
    */
