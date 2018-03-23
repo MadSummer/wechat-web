@@ -13,5 +13,5 @@
     npm run terminal
     ```
 # 动图演示
-()
+![动图演示](https://github.com/MadSummer/wechat-web/blob/master/demo.gif)
 
