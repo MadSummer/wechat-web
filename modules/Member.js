@@ -2,7 +2,7 @@
  * @Author: Liu Jing
  * @Date: 2017-12-03 15:19:31
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2018-03-23 13:55:12
+ * @Last Modified time: 2018-03-23 15:41:59
  */
 class Member {
   constructor(obj) {
@@ -15,6 +15,7 @@ class Member {
         this[key] = element;
       }
     }
+    this.robot = false;
   }
   getFullName() {
     return this.RemarkName || this.DisplayName || this.NickName;

@@ -2,7 +2,7 @@
  * @Author: Liu Jing
  * @Date: 2017-11-24 15:19:31
  * @Last Modified by: Liu Jing
- * @Last Modified time: 2018-03-23 13:53:19
+ * @Last Modified time: 2018-03-23 15:40:38
  */
 
 const events = require('events');
@@ -139,7 +139,7 @@ class NodeWechat {
     for (let i = 0; i < res.AddMsgList.length; i++) {
       const data = res.AddMsgList[i];
       //wechat init msg,ignore
-      if (data.MsgType === 51) return;
+      if (data.MsgType === 51) continue;
       let msg = new this.Message(data, this);
       // await msg parse
       await msg.parse();
