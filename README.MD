@@ -15,3 +15,6 @@
 # 动图演示
 ![动图演示](https://github.com/MadSummer/wechat-web/blob/master/demo.gif)
 
+# 其他
+ 目前有些功能还没有完善，找机会一点一点写，欢迎fork star issue
+
